@@ -19,13 +19,10 @@ func checkForMDCUnsandbox() -> Bool {
 
 func getKernel(_ device: Device) -> Bool {
     if !fileManager.fileExists(atPath: kernelPath) {
-        // 1. 首先尝试从应用包中获取
         if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
             try? fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
             if fileManager.fileExists(atPath: kernelPath) { return true }
         }
-        
-        // 2. 如果支持 MacDirtyCow，尝试从设备复制
         if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
             let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
             if fd > 0 {
@@ -43,35 +40,15 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 3. 尝试从多个源下载，最多重试3次
-        Logger.log("正在下载内核")
-        for attempt in 1...3 {
-            Logger.log("第 \(attempt) 次尝试下载")
-            
-            // 首先尝试使用设备信息直接下载
-            if device.boardConfig != "Unknown" {
-                Logger.log("正在使用设备信息下载...")
-                if grab_kernelcache_for(device.version.readableString, "20F66", device.modelIdentifier, device.boardConfig, kernelPath) {
-                    Logger.log("使用设备信息下载成功！", type: .success)
-                    return true
-                }
-            }
-            
-            // 如果失败，尝试通用下载方法
-            Logger.log("正在使用通用方法下载...")
+        // 无限重试下载内核，直到成功
+        Logger.log("正在下载内核文件，请您多等待一会...")
+        while true {
             if grab_kernelcache(kernelPath) {
-                Logger.log("下载成功！", type: .success)
                 return true
             }
-            
-            if attempt < 3 {
-                Logger.log("下载失败，等待2秒后重试...", type: .warning)
-                Thread.sleep(forTimeInterval: 2.0)
-            }
+            // 如果下载失败，等待1秒后重试
+            sleep(1)
         }
-        
-        Logger.log("所有下载尝试均失败", type: .error)
-        return false
     }
     
     return true
