@@ -20,6 +20,8 @@ struct MainView: View {
     
     @State private var isShowingSettings = false
     @State private var isShowingCredits = false
+    @State private var isShowingSuccessPopup = false
+    @State private var installedHelperName = ""
     
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
@@ -123,6 +125,12 @@ struct MainView: View {
                         CreditsView()
                     })
                 }
+                
+                if isShowingSuccessPopup {
+                    PopupView(isShowingAlert: $isShowingSuccessPopup, content: {
+                        SuccessPopupView(helperAppName: installedHelperName)
+                    })
+                }
             
             }
             .onChange(of: isInstalling) { _ in
@@ -130,6 +138,20 @@ struct MainView: View {
                     if device.isSupported {
                         if device.supportsDirectInstall {
                             installedSuccessfully = await doDirectInstall(device)
+                            if installedSuccessfully {
+                                // 获取持久性助手名称
+                                if let persistenceID = TIXDefaults().string(forKey: "persistenceHelper") {
+                                    for candidate in persistenceHelperCandidates {
+                                        if persistenceID == candidate.bundleIdentifier {
+                                            installedHelperName = candidate.displayName
+                                            break
+                                        }
+                                    }
+                                }
+                                withAnimation {
+                                    isShowingSuccessPopup = true
+                                }
+                            }
                         } else {
                             installedSuccessfully = await doIndirectInstall(device)
                         }
