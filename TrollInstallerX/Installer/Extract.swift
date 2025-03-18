@@ -24,7 +24,7 @@ func extractTrollStore(_ useLocalCopy: Bool) -> Bool {
         do {
             try fileManager.copyItem(atPath: extractPath + "/TrollStore.app/trollstorehelper", toPath: trollHelperPath)
         } catch let e {
-            print("Failed to copy trollstorehelper! \(e.localizedDescription)")
+            print("复制 trollstorehelper 失败! \(e.localizedDescription)")
             return false
         }
     }
@@ -40,7 +40,7 @@ func extractTrollStore(_ useLocalCopy: Bool) -> Bool {
         // Update the file permissions
         try fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: trollHelperPath)
     } catch let e {
-        print("Failed to set helper as executable! \(e.localizedDescription)")
+        print("设置助手为可执行文件失败! \(e.localizedDescription)")
         return false
     }
     
@@ -102,7 +102,7 @@ func extractTrollStoreIndirect() -> Bool {
         try fm.copyItem(at: persistenceHelperPath, to: persistenceHelperCopy)
     } catch {
         Logger.log("Failed to copy executables", type: .error)
-        print("Failed to copy \(fm.fileExists(atPath: rootHelperCopy.path) ? "persistence helper" : "root helper") - \(error.localizedDescription)")
+        print("Failed to copy \(fm.fileExists(atPath: rootHelperCopy.path) ? "持久性助手" : "root helper") - \(error.localizedDescription)")
         return false
     }
     
