@@ -148,9 +148,16 @@ struct MainView: View {
             .onAppear {
                 if device.isSupported {
                     withAnimation {
-                        // 不再显示 OTA 弹窗
                         isShowingOTAAlert = false
-                        isShowingMDCAlert = !checkForMDCUnsandbox() && MacDirtyCow.supports(device)
+                        // 如果设备支持 MacDirtyCow 且需要解除沙盒，则自动执行
+                        if !checkForMDCUnsandbox() && MacDirtyCow.supports(device) {
+                            grant_full_disk_access({ error in
+                                if let error = error {
+                                    Logger.log("利用 MacDirtyCow 漏洞失败")
+                                    NSLog("Failed to MacDirtyCow - \(error.localizedDescription)")
+                                }
+                            })
+                        }
                     }
                 }
                 Task {
