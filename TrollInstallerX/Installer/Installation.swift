@@ -327,6 +327,19 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         }
     } else {
         Logger.log("成功安装持久性助手", type: .success)
+        
+        // 获取当前选择的持久性助手名称
+        var helperAppName = ""
+        for candidate in persistenceHelperCandidates {
+            if persistenceID == candidate.bundleIdentifier {
+                helperAppName = candidate.displayName
+                break
+            }
+        }
+        
+        Logger.log("请打开【\(helperAppName)】这个软件", type: .warning)
+        Logger.log("找不到这个软件，请在桌面上搜一下", type: .warning)
+        
         success = true
     }
     
