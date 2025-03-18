@@ -319,6 +319,12 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     var success = false
     if !install_persistence_helper_via_vnode(pathToInstall) {
         Logger.log("安装持久性助手失败", type: .error)
+        Logger.log("注销后请重新再来安装！", type: .warning)
+        Logger.log("8秒后自动注销")
+        DispatchQueue.global().async {
+            sleep(8)
+            restartBackboard()
+        }
     } else {
         Logger.log("成功安装持久性助手", type: .success)
         success = true
