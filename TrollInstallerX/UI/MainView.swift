@@ -15,6 +15,7 @@ struct MainView: View {
     
     @State private var isShowingMDCAlert = false
     @State private var isShowingOTAAlert = false
+    // 我们不再使用这个变量，因为现在自动选择持久性助手
     @State private var isShowingHelperAlert = false
     
     @State private var isShowingSettings = false
@@ -23,7 +24,7 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
-    // Best way to show the alert midway through doInstall()
+    // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
     var body: some View {
@@ -123,24 +124,6 @@ struct MainView: View {
                     })
                 }
             
-            if helperView.showAlert {
-                PopupView(isShowingAlert: $isShowingHelperAlert, shouldAllowDismiss: false, content: {
-                    PersistenceHelperView(isShowingHelperAlert: $isShowingHelperAlert, allowNoPersistenceHelper: device.supportsDirectInstall)
-                    })
-                }
-            }
-            // Hacky, but it works (can't pass helperView.showAlert as a binding variable)
-            .onChange(of: helperView.showAlert) { new in
-                if new {
-                    withAnimation {
-                        isShowingHelperAlert = true
-                    }
-                }
-            }
-            .onChange(of: isShowingHelperAlert) { new in
-                if !new {
-                    helperView.showAlert = false
-                }
             }
             .onChange(of: isInstalling) { _ in
                 Task {

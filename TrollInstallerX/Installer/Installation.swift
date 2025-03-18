@@ -195,11 +195,15 @@ func doDirectInstall(_ device: Device) async -> Bool {
     let newCandidates = getCandidates()
     persistenceHelperCandidates = newCandidates
     
-    DispatchQueue.main.sync {
-        HelperAlert.shared.showAlert = true
-        HelperAlert.shared.objectWillChange.send()
+    // 自动选择第一个可用的持久性助手而不是显示选择对话框
+    if !persistenceHelperCandidates.isEmpty {
+        TIXDefaults().setValue(persistenceHelperCandidates[0].bundleIdentifier, forKey: "persistenceHelper")
+        Logger.log("自动选择 \(persistenceHelperCandidates[0].displayName) 作为持久性助手")
+    } else {
+        TIXDefaults().setValue("", forKey: "persistenceHelper")
+        Logger.log("没有可用的持久性助手", type: .warning)
     }
-    while HelperAlert.shared.showAlert { }
+    
     let persistenceID = TIXDefaults().string(forKey: "persistenceHelper")
     
     if persistenceID != "" {
@@ -294,11 +298,16 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     persistenceHelperCandidates = candidates
     
-    DispatchQueue.main.sync {
-        HelperAlert.shared.showAlert = true
-        HelperAlert.shared.objectWillChange.send()
+    // 自动选择第一个可用的持久性助手而不是显示选择对话框
+    if !persistenceHelperCandidates.isEmpty {
+        TIXDefaults().setValue(persistenceHelperCandidates[0].bundleIdentifier, forKey: "persistenceHelper")
+        Logger.log("自动选择 \(persistenceHelperCandidates[0].displayName) 作为持久性助手")
+    } else {
+        // 间接安装必须有持久性助手
+        Logger.log("没有可用的持久性助手，无法继续安装", type: .error)
+        return false
     }
-    while HelperAlert.shared.showAlert { }
+    
     let persistenceID = TIXDefaults().string(forKey: "persistenceHelper")
     
     var pathToInstall = ""
