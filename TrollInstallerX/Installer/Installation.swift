@@ -223,11 +223,12 @@ func doDirectInstall(_ device: Device) async -> Bool {
             }
             
             // 发送安装成功通知，包含持久性助手名称
+            let userInfo: [String: Any] = ["helperName": helperName]
             DispatchQueue.main.async {
                 NotificationCenter.default.post(
                     name: installSuccessNotification,
                     object: nil,
-                    userInfo: ["helperName": helperName]
+                    userInfo: userInfo
                 )
             }
         } else {

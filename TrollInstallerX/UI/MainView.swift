@@ -103,7 +103,7 @@ struct MainView: View {
                         
                         
                         }
-                        .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                        .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || isShowingSuccessAlert) ? 10 : 0)
                     }
                 }
                 if isShowingOTAAlert {
@@ -166,7 +166,12 @@ struct MainView: View {
                 }
                 
                 // 添加通知观察者
-                NotificationCenter.default.addObserver(forName: installSuccessNotification, object: nil, queue: .main) { notification in
+                NotificationCenter.default.addObserver(
+                    forName: installSuccessNotification,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] notification in
+                    guard let self = self else { return }
                     if let helperName = notification.userInfo?["helperName"] as? String {
                         self.helperAppName = helperName
                         withAnimation {
