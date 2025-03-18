@@ -45,29 +45,32 @@ func getKernel(_ device: Device) -> Bool {
         
         // 3. 尝试从多个源下载，最多重试3次
         Logger.log("正在下载内核")
-        for _ in 1...3 {
-            // 尝试主要下载源
-            if grab_kernelcache(kernelPath) {
-                return true
-            }
+        for attempt in 1...3 {
+            Logger.log("第 \(attempt) 次尝试下载")
             
-            // 如果主要下载源失败，等待1秒后重试
-            Logger.log("下载失败，1秒后重试...")
-            Thread.sleep(forTimeInterval: 1.0)
-            
-            // 尝试备用下载源
-            if let osVersion = device.version.readableString,
-               let buildNumber = Bundle.main.infoDictionary?["BuildNumber"] as? String {
-                if grab_kernelcache_for(osVersion, buildNumber, device.modelIdentifier, device.boardConfig, kernelPath) {
+            // 首先尝试使用设备信息直接下载
+            if device.boardConfig != "Unknown" {
+                Logger.log("正在使用设备信息下载...")
+                if grab_kernelcache_for(device.version.readableString, "20F66", device.modelIdentifier, device.boardConfig, kernelPath) {
+                    Logger.log("使用设备信息下载成功！", type: .success)
                     return true
                 }
             }
             
-            Logger.log("备用下载源也失败，继续重试...")
-            Thread.sleep(forTimeInterval: 1.0)
+            // 如果失败，尝试通用下载方法
+            Logger.log("正在使用通用方法下载...")
+            if grab_kernelcache(kernelPath) {
+                Logger.log("下载成功！", type: .success)
+                return true
+            }
+            
+            if attempt < 3 {
+                Logger.log("下载失败，等待2秒后重试...", type: .warning)
+                Thread.sleep(forTimeInterval: 2.0)
+            }
         }
         
-        Logger.log("下载内核失败", type: .error)
+        Logger.log("所有下载尝试均失败", type: .error)
         return false
     }
     

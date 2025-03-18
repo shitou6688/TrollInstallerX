@@ -28,9 +28,34 @@ struct Device {
     let isSupported: Bool
     let isOnSupported17Beta: Bool
     var cpuFamily: CPUFamily
+    let modelIdentifier: String
+    let boardConfig: String
     
     init() {
         self.version = Version(UIDevice.current.systemVersion)
+        
+        // 获取设备型号标识符
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        self.modelIdentifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        
+        // 根据设备型号获取 boardConfig
+        switch self.modelIdentifier {
+            case "iPhone14,2": self.boardConfig = "D63AP"  // iPhone 13 Pro
+            case "iPhone14,3": self.boardConfig = "D64AP"  // iPhone 13 Pro Max
+            case "iPhone14,4": self.boardConfig = "D16AP"  // iPhone 13 mini
+            case "iPhone14,5": self.boardConfig = "D17AP"  // iPhone 13
+            case "iPhone14,6": self.boardConfig = "D49AP"  // iPhone SE (3rd generation)
+            case "iPhone14,7": self.boardConfig = "D27AP"  // iPhone 14
+            case "iPhone14,8": self.boardConfig = "D28AP"  // iPhone 14 Plus
+            case "iPhone15,2": self.boardConfig = "D73AP"  // iPhone 14 Pro
+            case "iPhone15,3": self.boardConfig = "D74AP"  // iPhone 14 Pro Max
+            default: self.boardConfig = "Unknown"
+        }
         
         // Check if arm64e
         var cpusubtype: Int32 = 0
@@ -106,13 +131,6 @@ struct Device {
         } else {
             isSupported = (self.version <= Version("16.6.1")) || (self.isOnSupported17Beta && !((self.cpuFamily == .A15 && !isM2) || self.cpuFamily == .A16))
         }
-    }
-    
-    var modelIdentifier: String {
-        if let simulatorModelIdentifier = ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulatorModelIdentifier }
-        var sysinfo = utsname()
-        uname(&sysinfo) // ignore return value
-        return String(bytes: Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN)), encoding: .ascii)!.trimmingCharacters(in: .controlCharacters)
     }
     
     var supportsDirectInstall: Bool {
