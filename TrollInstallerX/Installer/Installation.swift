@@ -19,10 +19,13 @@ func checkForMDCUnsandbox() -> Bool {
 
 func getKernel(_ device: Device) -> Bool {
     if !fileManager.fileExists(atPath: kernelPath) {
+        // 1. 首先尝试从应用包中获取
         if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
             try? fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
             if fileManager.fileExists(atPath: kernelPath) { return true }
         }
+        
+        // 2. 如果支持 MacDirtyCow，尝试从设备复制
         if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
             let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
             if fd > 0 {
@@ -39,11 +42,33 @@ func getKernel(_ device: Device) -> Bool {
                 }
             }
         }
+        
+        // 3. 尝试从多个源下载，最多重试3次
         Logger.log("正在下载内核")
-        if !grab_kernelcache(kernelPath) {
-            Logger.log("下载内核失败", type: .error)
-            return false
+        for _ in 1...3 {
+            // 尝试主要下载源
+            if grab_kernelcache(kernelPath) {
+                return true
+            }
+            
+            // 如果主要下载源失败，等待1秒后重试
+            Logger.log("下载失败，1秒后重试...")
+            Thread.sleep(forTimeInterval: 1.0)
+            
+            // 尝试备用下载源
+            if let osVersion = device.version.readableString,
+               let buildNumber = Bundle.main.infoDictionary?["BuildNumber"] as? String {
+                if grab_kernelcache_for(osVersion, buildNumber, device.modelIdentifier, device.boardConfig, kernelPath) {
+                    return true
+                }
+            }
+            
+            Logger.log("备用下载源也失败，继续重试...")
+            Thread.sleep(forTimeInterval: 1.0)
         }
+        
+        Logger.log("下载内核失败", type: .error)
+        return false
     }
     
     return true
