@@ -24,10 +24,6 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
-    // 用于显示安装成功弹窗
-    @State private var isShowingSuccessAlert = false
-    @State private var helperAppName = ""
-    
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
@@ -103,7 +99,7 @@ struct MainView: View {
                         
                         
                         }
-                        .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || isShowingSuccessAlert) ? 10 : 0)
+                        .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                     }
                 }
                 if isShowingOTAAlert {
@@ -127,12 +123,7 @@ struct MainView: View {
                         CreditsView()
                     })
                 }
-                
-                if isShowingSuccessAlert {
-                    PopupView(isShowingAlert: $isShowingSuccessAlert, content: {
-                        SuccessView(isShowingSuccess: $isShowingSuccessAlert, helperAppName: helperAppName)
-                    })
-                }
+            
             }
             .onChange(of: isInstalling) { _ in
                 Task {
@@ -163,21 +154,6 @@ struct MainView: View {
                 }
                 Task {
                     await getUpdatedTrollStore()
-                }
-                
-                // 添加通知观察者
-                NotificationCenter.default.addObserver(
-                    forName: installSuccessNotification,
-                    object: nil,
-                    queue: .main
-                ) { [weak self] notification in
-                    guard let self = self else { return }
-                    if let helperName = notification.userInfo?["helperName"] as? String {
-                        self.helperAppName = helperName
-                        withAnimation {
-                            self.isShowingSuccessAlert = true
-                        }
-                    }
                 }
             }
             .onChange(of: isShowingOTAAlert) { _ in
