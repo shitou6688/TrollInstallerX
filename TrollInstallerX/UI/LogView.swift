@@ -49,14 +49,14 @@ struct LogView: View {
                                     Label(
                                         title: {
                                             Text(log.message)
-                                                .font(.system(size: 13, weight: .regular, design: .rounded))
+                                                .font(.system(size: log.type == .success || log.type == .warning ? 16 : 13, weight: .regular, design: .rounded))
                                                 .shadow(radius: 2)
                                         },
                                         icon: {
                                             Image(systemName: log.image)
                                                 .resizable()
                                                 .aspectRatio(contentMode: .fit)
-                                                .frame(width: 12, height: 12)
+                                                .frame(width: log.type == .success || log.type == .warning ? 15 : 12, height: log.type == .success || log.type == .warning ? 15 : 12)
                                                 .padding(.trailing, 5)
                                         }
                                     )
