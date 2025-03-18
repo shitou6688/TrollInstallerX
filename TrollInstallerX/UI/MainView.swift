@@ -148,8 +148,9 @@ struct MainView: View {
             .onAppear {
                 if device.isSupported {
                     withAnimation {
-                        isShowingOTAAlert = device.supportsOTA
-                        if !isShowingOTAAlert { isShowingMDCAlert = !checkForMDCUnsandbox() && MacDirtyCow.supports(device) }
+                        // 不再显示 OTA 弹窗
+                        isShowingOTAAlert = false
+                        isShowingMDCAlert = !checkForMDCUnsandbox() && MacDirtyCow.supports(device)
                     }
                 }
                 Task {
