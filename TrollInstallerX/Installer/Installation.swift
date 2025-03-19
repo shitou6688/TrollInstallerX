@@ -41,6 +41,7 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
+        Logger.log("如长时间无响应，请关机重启设备或者更换网络尝试！", type: .warning)
         
         // 创建一个信号量来跟踪下载是否完成
         let downloadSemaphore = DispatchSemaphore(value: 0)
