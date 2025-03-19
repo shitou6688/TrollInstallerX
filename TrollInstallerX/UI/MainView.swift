@@ -41,29 +41,29 @@ struct MainView: View {
                     .ignoresSafeArea()
                 
                 VStack {
-                    Spacer()
-                    
-                    VStack {
-                        Image("Icon")
-                            .resizable()
-                            .cornerRadius(22)
-                            .frame(maxWidth: 100, maxHeight: 100)
-                            .shadow(radius: 10)
-                        Text("巨魔安装器X")
-                            .font(.system(size: 30, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                        Text("开发者：Alfie CG")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
-                        Text("iOS 14.0 - 16.6.1")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                    .padding(.vertical)
-                    
-                    Spacer()
-                    
-                    VStack(spacing: 12) {
+                    if !isInstalling {
+                        Spacer()
+                        
+                        VStack {
+                            Image("Icon")
+                                .resizable()
+                                .cornerRadius(22)
+                                .frame(maxWidth: 100, maxHeight: 100)
+                                .shadow(radius: 10)
+                            Text("巨魔安装器X")
+                                .font(.system(size: 30, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text("开发者：Alfie CG")
+                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("iOS 14.0 - 16.6.1")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .padding(.vertical)
+                        
+                        Spacer()
+                        
                         // 执行安装按钮
                         Button(action: {
                             if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
@@ -85,8 +85,20 @@ struct MainView: View {
                             .cornerRadius(10)
                         }
                         .disabled(!device.isSupported)
+                        .padding(.bottom, 50)
+                    } else {
+                        // 安装状态显示
+                        VStack {
+                            Spacer()
+                            LogView(installationFinished: $installationFinished)
+                                .frame(maxWidth: geometry.size.width - 40)
+                                .frame(maxHeight: geometry.size.height / 2)
+                                .background(Color.white.opacity(0.1))
+                                .cornerRadius(15)
+                            Spacer()
+                        }
+                        .transition(.opacity)
                     }
-                    .padding(.bottom, 50)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
