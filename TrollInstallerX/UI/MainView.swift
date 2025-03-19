@@ -34,11 +34,11 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x0482d1).opacity(0.8),   // 深蓝
-        Color(hex: 0x0566ed).opacity(0.7),   // 明亮蓝
-        Color(hex: 0x0450d1).opacity(0.6),   // 靛蓝
-        Color(hex: 0x3A7CA5).opacity(0.5),   // 柔和蓝灰
-        Color(hex: 0x5C9EAD).opacity(0.4)    // 青色
+        Color(hex: 0x0482d1),   // 深蓝
+        Color(hex: 0x0566ed),   // 明亮蓝
+        Color(hex: 0x0450d1),   // 靛蓝
+        Color(hex: 0x3A7CA5),   // 柔和蓝灰
+        Color(hex: 0x5C9EAD)    // 青色
     ]
     
     var body: some View {
@@ -51,15 +51,11 @@ struct MainView: View {
                     endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
-                .animation(
-                    Animation.easeInOut(duration: 10)  // 延长动画时间
-                    .repeatForever(autoreverses: true)
-                )
-                .blur(radius: 30)  // 添加模糊效果
+                .animation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true))
                 .onAppear {
                     withAnimation {
-                        gradientStart = UnitPoint(x: 0.7, y: 0.3)
-                        gradientEnd = UnitPoint(x: 0.3, y: 0.7)
+                        gradientStart = UnitPoint(x: 1, y: 1)
+                        gradientEnd = UnitPoint(x: 0, y: 0)
                     }
                 }
                 
@@ -105,15 +101,14 @@ struct MainView: View {
                     .background(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color.white.opacity(0.05),
-                                Color.white.opacity(0.02)
+                                Color.white.opacity(0.1),
+                                Color.white.opacity(0.05)
                             ]),
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .cornerRadius(15)
-                        .shadow(color: .white.opacity(0.1), radius: 10, x: 0, y: 2)
-                        .padding(.horizontal, 30)
+                        .cornerRadius(20)
+                        .padding(.horizontal, 20)
                     )
                     
                     Spacer()

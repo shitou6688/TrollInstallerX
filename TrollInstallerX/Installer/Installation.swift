@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Foundation
 
 let fileManager = FileManager.default
 let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -18,164 +17,12 @@ func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
 }
 
-func downloadKernelFromAppleDB(_ device: Device) -> Bool {
-    // 构建更精确的下载 URL
-    let baseURL = "https://api.appledb.dev"
-    
-    // 创建更复杂的网络请求配置
-    let configuration = URLSessionConfiguration.default
-    configuration.timeoutIntervalForRequest = 30  // 请求超时
-    configuration.timeoutIntervalForResource = 60 // 资源下载超时
-    configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-    
-    let session = URLSession(configuration: configuration)
-    
-    // 使用信号量控制同步
-    let semaphore = DispatchSemaphore(value: 0)
-    var downloadSuccess = false
-    
-    // 构建详细的下载请求
-    guard let url = URL(string: "\(baseURL)/download/kernelcache/\(device.modelIdentifier)/\(device.version.readableString)") else {
-        Logger.log("无法构建有效的下载链接", type: .error)
-        return false
-    }
-    
-    // 创建可变的 URL 请求
-    var request = URLRequest(url: url)
-    request.httpMethod = "GET"
-    request.setValue("TrollInstallerX/1.0", forHTTPHeaderField: "User-Agent")
-    
-    let task = session.downloadTask(with: request) { (tempLocalUrl, response, error) in
-        defer { semaphore.signal() }
-        
-        // 详细的错误处理
-        if let error = error {
-            Logger.log("下载过程发生错误: \(error.localizedDescription)", type: .error)
-            return
-        }
-        
-        // 严格的响应验证
-        guard let httpResponse = response as? HTTPURLResponse else {
-            Logger.log("未收到有效的 HTTP 响应", type: .error)
-            return
-        }
-        
-        // 状态码检查
-        guard (200...299).contains(httpResponse.statusCode) else {
-            Logger.log("下载失败，HTTP状态码: \(httpResponse.statusCode)", type: .error)
-            return
-        }
-        
-        // 确保临时文件存在
-        guard let tempLocalUrl = tempLocalUrl else {
-            Logger.log("未找到下载的临时文件", type: .error)
-            return
-        }
-        
-        do {
-            // 文件大小检查
-            let attributes = try FileManager.default.attributesOfItem(atPath: tempLocalUrl.path)
-            let fileSize = attributes[.size] as? Int64 ?? 0
-            
-            guard fileSize > 0 else {
-                Logger.log("下载的内核文件大小异常", type: .error)
-                return
-            }
-            
-            // 移动文件
-            try FileManager.default.moveItem(at: tempLocalUrl, toPath: kernelPath)
-            
-            downloadSuccess = true
-            Logger.log("成功从AppleDB下载内核，文件大小: \(fileSize) 字节", type: .success)
-        } catch {
-            Logger.log("保存内核文件失败: \(error.localizedDescription)", type: .error)
-        }
-    }
-    
-    task.resume()
-    
-    // 等待下载完成，设置超时
-    let timeout = DispatchTime.now() + .seconds(60)
-    if semaphore.wait(timeout: timeout) == .timedOut {
-        Logger.log("内核下载超时", type: .error)
-        return false
-    }
-    
-    return downloadSuccess
-}
-
-func validateAppleDatabaseAPI(_ device: Device) -> Bool {
-    let baseURL = "https://api.appledb.dev"
-    
-    // 创建验证 URL
-    guard let url = URL(string: "\(baseURL)/download/kernelcache/\(device.modelIdentifier)/\(device.version.readableString)") else {
-        Logger.log("无法构建验证下载链接", type: .error)
-        return false
-    }
-    
-    // 创建信号量
-    let semaphore = DispatchSemaphore(value: 0)
-    var isValid = false
-    
-    // 创建网络请求
-    let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
-        defer { semaphore.signal() }
-        
-        // 检查错误
-        if let error = error {
-            Logger.log("API 验证错误: \(error.localizedDescription)", type: .error)
-            return
-        }
-        
-        // 检查响应
-        guard let httpResponse = response as? HTTPURLResponse else {
-            Logger.log("未收到有效的 HTTP 响应", type: .error)
-            return
-        }
-        
-        // 检查状态码
-        guard (200...299).contains(httpResponse.statusCode) else {
-            Logger.log("API 验证失败，HTTP状态码: \(httpResponse.statusCode)", type: .error)
-            return
-        }
-        
-        // 检查数据
-        guard let data = data, !data.isEmpty else {
-            Logger.log("未收到有效的响应数据", type: .error)
-            return
-        }
-        
-        // 验证成功
-        isValid = true
-        Logger.log("AppleDB API 验证成功，响应大小: \(data.count) 字节", type: .success)
-    }
-    
-    task.resume()
-    
-    // 等待请求完成，设置超时
-    let timeout = DispatchTime.now() + .seconds(30)
-    if semaphore.wait(timeout: timeout) == .timedOut {
-        Logger.log("API 验证超时", type: .error)
-        return false
-    }
-    
-    return isValid
-}
-
 func getKernel(_ device: Device) -> Bool {
-    // 首先验证 API 可用性
-    if !validateAppleDatabaseAPI(device) {
-        Logger.log("AppleDB API 验证失败，将使用备用下载方法", type: .warning)
-    }
-    
     if !fileManager.fileExists(atPath: kernelPath) {
-        // 尝试从本地资源获取
         if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
             try? fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
             if fileManager.fileExists(atPath: kernelPath) { return true }
         }
-        
-        // MacDirtyCow支持
         if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
             let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
             if fd > 0 {
@@ -192,15 +39,24 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 尝试从AppleDB下载
-        Logger.log("正在从AppleDB下载内核", type: .info)
-        if downloadKernelFromAppleDB(device) {
-            return true
-        }
-        
-        // 原有的网络下载方法
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
+        // 尝试使用配置的代理节点下载
+        for node in NetworkConfig.shared.vpnNodes {
+            Logger.log("正在使用代理节点：\(node.host):\(node.port)", type: .info)
+            NetworkConfig.shared.configureProxy(for: node)
+            
+            if grab_kernelcache(kernelPath) {
+                NetworkConfig.shared.disableProxy()
+                return true
+            }
+            
+            // 如果这个节点失败，尝试下一个
+            NetworkConfig.shared.disableProxy()
+            sleep(1)
+        }
+        
+        // 如果所有代理节点都失败，尝试直接下载
         while true {
             if grab_kernelcache(kernelPath) {
                 return true
@@ -506,17 +362,6 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     var success = false
     if !install_persistence_helper_via_vnode(pathToInstall) {
         Logger.log("安装持久性助手失败", type: .error)
-        Logger.log("请在注销重启后，再来重新操作", type: .warning)
-        
-        // 6秒注销倒计时
-        Logger.log("6秒后自动注销", type: .warning)
-        DispatchQueue.global().async {
-            for countdown in stride(from: 6, to: 0, by: -1) {
-                Logger.log("\(countdown)秒后注销", type: .warning)
-                sleep(1)
-            }
-            restartBackboard()
-        }
     } else {
         Logger.log("成功安装持久性助手", type: .success)
         success = true
