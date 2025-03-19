@@ -26,8 +26,6 @@ struct MainView: View {
     
     @State private var gradientStart = UnitPoint(x: 0, y: 0)
     @State private var gradientEnd = UnitPoint(x: 1, y: 1)
-    @State private var gradientRotation: Double = 0
-    
     @State private var rotationDegree: Double = 0
     @State private var breatheScale: CGFloat = 1.0
     
@@ -35,12 +33,12 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let backgroundColors = [
-        Color(hex: 0x1E90FF),   // 亮蓝色
-        Color(hex: 0x4169E1),   // 皇家蓝
-        Color(hex: 0x6495ED),   // 矢车菊蓝
-        Color(hex: 0x87CEEB),   // 天空蓝
-        Color(hex: 0x00BFFF)    // 深天蓝
+    let colors = [
+        Color(hex: 0x0482d1),   // 深蓝
+        Color(hex: 0x0566ed),   // 明亮蓝
+        Color(hex: 0x0450d1),   // 靛蓝
+        Color(hex: 0x3A7CA5),   // 柔和蓝灰
+        Color(hex: 0x5C9EAD)    // 青色
     ]
     
     var body: some View {
@@ -48,35 +46,18 @@ struct MainView: View {
             ZStack {
                 // 动态渐变背景
                 LinearGradient(
-                    gradient: Gradient(colors: backgroundColors),
+                    gradient: Gradient(colors: colors),
                     startPoint: gradientStart,
                     endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
-                .animation(
-                    Animation.easeInOut(duration: 15)
-                        .repeatForever(autoreverses: true)
-                )
-                .rotationEffect(Angle(degrees: gradientRotation))
+                .animation(Animation.easeInOut(duration: 10).repeatForever(autoreverses: true))
                 .onAppear {
                     withAnimation {
                         gradientStart = UnitPoint(x: 1, y: 1)
                         gradientEnd = UnitPoint(x: 0, y: 0)
-                        gradientRotation = 15
                     }
                 }
-                
-                // 微妙的径向渐变叠加
-                RadialGradient(
-                    gradient: Gradient(colors: [
-                        Color.white.opacity(0.05),
-                        Color.white.opacity(0.01)
-                    ]),
-                    center: .center,
-                    startRadius: 10,
-                    endRadius: 600
-                )
-                .ignoresSafeArea()
                 
                 VStack {
                     // 顶部图标和标题固定显示
@@ -86,10 +67,20 @@ struct MainView: View {
                             .cornerRadius(22)
                             .frame(maxWidth: 100, maxHeight: 100)
                             .shadow(radius: 10)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 22)
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            .rotation3DEffect(
+                                .degrees(rotationDegree),
+                                axis: (x: 0.0, y: 1.0, z: 0.0)
                             )
+                            .scaleEffect(breatheScale)
+                            .onAppear {
+                                withAnimation(
+                                    .easeInOut(duration: 3)
+                                    .repeatForever(autoreverses: true)
+                                ) {
+                                    rotationDegree = 5
+                                    breatheScale = 1.05
+                                }
+                            }
                         
                         Text("巨魔安装器X")
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
@@ -107,12 +98,6 @@ struct MainView: View {
                             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     }
                     .padding(.top, 50)
-                    .background(
-                        BlurView(style: .dark)
-                            .opacity(0.2)
-                            .cornerRadius(20)
-                            .padding(.horizontal, 40)
-                    )
                     
                     Spacer()
                     
