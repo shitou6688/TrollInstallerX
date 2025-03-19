@@ -99,8 +99,8 @@ struct MainView: View {
                         .background(Color.white.opacity(0.2))
                         .cornerRadius(10)
                     }
-                    .disabled(!device.isSupported)
-                    .opacity(device.isSupported ? 1 : 0.5)
+                    .disabled(!device.isSupported || isInstalling)
+                    .opacity(isInstalling ? 0.5 : 1)
                     .padding(.bottom, 50)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
