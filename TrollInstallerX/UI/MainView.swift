@@ -26,38 +26,27 @@ struct MainView: View {
     
     @State private var gradientStart = UnitPoint(x: 0, y: 0)
     @State private var gradientEnd = UnitPoint(x: 1, y: 1)
-    @State private var rotationDegree: Double = 0
-    @State private var breatheScale: CGFloat = 1.0
     
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
-    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [
-        Color(hex: 0x0450d1),   // 深靛蓝
-        Color(hex: 0x3A7CA5),   // 柔和蓝灰
-        Color(hex: 0x5C9EAD),   // 青色
-        Color(hex: 0x1E4E8C),   // 深蓝
-        Color(hex: 0x2C3E50)    // 深蓝灰
-    ]
+    let timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 动态渐变背景
-                LinearGradient(
-                    gradient: Gradient(colors: colors),
-                    startPoint: gradientStart,
-                    endPoint: gradientEnd
-                )
-                .ignoresSafeArea()
-                .animation(Animation.linear(duration: 10).repeatForever())
-                .onAppear {
-                    withAnimation {
-                        gradientStart = UnitPoint(x: 1, y: 1)
-                        gradientEnd = UnitPoint(x: 0, y: 0)
+                // 添加动态渐变背景
+                LinearGradient(gradient: Gradient(colors: colors), startPoint: gradientStart, endPoint: gradientEnd)
+                    .ignoresSafeArea()
+                    .animation(.easeInOut(duration: 3), value: gradientStart)
+                    .animation(.easeInOut(duration: 3), value: gradientEnd)
+                    .onReceive(timer) { _ in
+                        withAnimation {
+                            self.gradientStart = UnitPoint(x: CGFloat.random(in: -0.5...1.5), y: CGFloat.random(in: -0.5...1.5))
+                            self.gradientEnd = UnitPoint(x: CGFloat.random(in: -0.5...1.5), y: CGFloat.random(in: -0.5...1.5))
+                        }
                     }
-                }
                 
                 VStack {
                     // 顶部图标和标题固定显示
@@ -67,49 +56,17 @@ struct MainView: View {
                             .cornerRadius(22)
                             .frame(maxWidth: 100, maxHeight: 100)
                             .shadow(radius: 10)
-                            .rotation3DEffect(
-                                .degrees(rotationDegree),
-                                axis: (x: 0.0, y: 1.0, z: 0.0)
-                            )
-                            .scaleEffect(breatheScale)
-                            .onAppear {
-                                withAnimation(
-                                    .easeInOut(duration: 2)
-                                    .repeatForever(autoreverses: true)
-                                ) {
-                                    rotationDegree = 10
-                                    breatheScale = 1.1
-                                }
-                            }
-                        
                         Text("巨魔安装器X")
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 2)
-                        
                         Text("开发者：Alfie CG")
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.7))
-                            .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 1)
-                        
+                            .foregroundColor(.white.opacity(0.5))
                         Text("iOS 14.0 - 16.6.1")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
-                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     }
                     .padding(.top, 50)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.white.opacity(0.1),
-                                Color.white.opacity(0.05)
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .cornerRadius(20)
-                        .padding(.horizontal, 20)
-                    )
                     
                     Spacer()
                     
