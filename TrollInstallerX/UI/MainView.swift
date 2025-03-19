@@ -70,41 +70,39 @@ struct MainView: View {
                 }
                 .padding(.top, 50)
                 
-                VStack {
-                    // 顶部图标和标题固定显示
-                    VStack {
+                VStack(spacing: 20) {
+                    // 顶部图标和标题居中显示
+                    VStack(alignment: .center, spacing: 10) {
                         Image("Icon")
                             .resizable()
                             .cornerRadius(22)
-                            .frame(maxWidth: 100, maxHeight: 100)
+                            .frame(width: 100, height: 100)
                             .shadow(radius: 10)
+                        
                         Text("巨魔安装器X")
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
+                        
                         Text("开发者：Alfie CG")
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
+                        
                         Text("iOS 14.0 - 16.6.1")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
                     }
-                    .padding(.top, 50)
-                    
-                    Spacer()
                     
                     // 安装状态显示（如果正在安装）
                     if isInstalling {
                         LogView(installationFinished: $installationFinished)
                             .frame(maxWidth: geometry.size.width - 40)
-                            .frame(height: geometry.size.height * 0.6)  // 增加高度到60%
+                            .frame(maxHeight: geometry.size.height / 2)
                             .background(Color.white.opacity(0.1))
                             .cornerRadius(15)
                             .transition(.opacity)
                     }
                     
-                    Spacer()
-                    
-                    // 底部按钮始终显示
+                    // 底部按钮居中
                     Button(action: {
                         if !device.isSupported {
                             Logger.log("您的设备版本不支持！", type: .error)
@@ -131,10 +129,11 @@ struct MainView: View {
                     }
                     .disabled(!device.isSupported || isInstalling)
                     .opacity(isInstalling ? 0.5 : 1)
-                    .padding(.bottom, 50)
                 }
-                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
                 
+                // 弹窗层保持不变
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
                         TrollHelperOTAView(arm64eVersion: .constant(false))
