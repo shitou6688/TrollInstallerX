@@ -76,11 +76,6 @@ struct MainView: View {
                     
                     // 底部按钮始终显示
                     Button(action: {
-                        if !device.isSupported {
-                            Logger.log("您的设备版本不支持！", type: .error)
-                            return
-                        }
-                        
                         if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert && !isInstalling {
                             UIImpactFeedbackGenerator().impactOccurred()
                             withAnimation {
@@ -91,7 +86,7 @@ struct MainView: View {
                         HStack {
                             Image(systemName: "arrow.right.circle")
                                 .foregroundColor(.white)
-                            Text(device.isSupported ? "执行自动化安装程序" : "您的设备版本不支持")
+                            Text("执行自动化安装程序")
                                 .foregroundColor(.white)
                         }
                         .frame(maxWidth: geometry.size.width - 40)
@@ -99,8 +94,8 @@ struct MainView: View {
                         .background(Color.white.opacity(0.2))
                         .cornerRadius(10)
                     }
-                    .disabled(!device.isSupported)
-                    .opacity(device.isSupported ? 1 : 0.5)
+                    .disabled(!device.isSupported || isInstalling)
+                    .opacity(isInstalling ? 0.5 : 1)
                     .padding(.bottom, 50)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
