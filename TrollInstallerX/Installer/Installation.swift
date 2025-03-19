@@ -233,7 +233,18 @@ func doDirectInstall(_ device: Device) async -> Bool {
     if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
         Logger.log("安装 TrollStore 失败", type: .error)
     } else {
-        Logger.log("成功安装 TrollStore！", type: .success)
+        Logger.log("已安装成功，请返回桌面查找 TrollStore（大头巨魔）", type: .success)
+        
+        // 获取当前选择的持久性助手名称
+        var helperAppName = ""
+        for candidate in persistenceHelperCandidates {
+            if persistenceID == candidate.bundleIdentifier {
+                helperAppName = candidate.displayName
+                break
+            }
+        }
+        
+        Logger.log("已注入到【\(helperAppName)】", type: .warning)
     }
     
     if !cleanupPrivatePreboot() {
