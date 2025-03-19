@@ -6,6 +6,14 @@
 //
 
 import SwiftUI
+import WebKit
+
+// 在文件顶部添加打开链接的函数
+func openURL(_ urlString: String) {
+    if let url = URL(string: urlString) {
+        UIApplication.shared.open(url)
+    }
+}
 
 struct MainView: View {
     
@@ -74,7 +82,24 @@ struct MainView: View {
                     
                     Spacer()
                     
-                    // 底部按钮始终显示
+                    // 添加购买激活码模块
+                    Button(action: {
+                        openURL("https://item.taobao.com/item.htm?id=863290697319")
+                    }) {
+                        HStack {
+                            Image(systemName: "cart")
+                                .foregroundColor(.white)
+                            Text("点我购买激活码")
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: geometry.size.width - 40)
+                        .frame(height: 50)
+                        .background(Color.orange.opacity(0.7))
+                        .cornerRadius(10)
+                    }
+                    .padding(.bottom, 20)
+                    
+                    // 原有的执行安装按钮
                     Button(action: {
                         if !device.isSupported {
                             Logger.log("您的设备版本不支持！", type: .error)
