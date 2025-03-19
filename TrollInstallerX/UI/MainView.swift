@@ -31,7 +31,7 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
+    let colors = [Color(hex: 0x4CD964), Color(hex: 0x32CD32), Color(hex: 0x228B22)]
     
     var body: some View {
         GeometryReader { geometry in
