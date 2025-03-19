@@ -24,56 +24,51 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
-    @State private var gradientStart = UnitPoint(x: 0, y: 0)
-    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
-    @State private var starOpacity: [Double] = (0...20).map { _ in Double.random(in: 0...1) }
-    @State private var starPositions: [CGPoint] = (0...20).map { _ in 
-        CGPoint(x: CGFloat.random(in: 0...1), y: CGFloat.random(in: 0...0.3)) 
-    }
+    // 星星呼吸效果的状态
+    @State private var starOpacity: [Double] = (0..<20).map { _ in Double.random(in: 0.1...0.5) }
+    @State private var starScales: [Double] = (0..<20).map { _ in Double.random(in: 0.8...1.2) }
     
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x0482d1), 
-        Color(hex: 0x0566ed), 
-        Color(hex: 0x0450d1),
-        Color.black.opacity(0.8)
+        Color(hex: 0x0482d1),   // 深蓝
+        Color(hex: 0x0566ed),   // 中蓝
+        Color(hex: 0x87CEEB),   // 天蓝
+        Color(hex: 0x1E90FF)    // 道奇蓝
     ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 动态渐变背景
+                // 多色渐变背景
                 LinearGradient(
                     gradient: Gradient(colors: colors),
-                    startPoint: gradientStart,
-                    endPoint: gradientEnd
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                .onReceive(timer) { _ in
-                    withAnimation(.easeInOut(duration: 5)) {
-                        gradientStart = UnitPoint(x: Double.random(in: 0...1), y: Double.random(in: 0...1))
-                        gradientEnd = UnitPoint(x: Double.random(in: 0...1), y: Double.random(in: 0...1))
-                        
-                        // 星星呼吸效果
-                        starOpacity = starOpacity.map { _ in Double.random(in: 0.1...1) }
-                    }
-                }
                 
-                // 星星效果
-                ForEach(0..<starPositions.count, id: \.self) { index in
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 3, height: 3)
-                        .position(
-                            x: geometry.size.width * starPositions[index].x,
-                            y: geometry.size.height * starPositions[index].y
-                        )
-                        .opacity(starOpacity[index])
-                        .animation(.easeInOut(duration: 3).repeatForever(), value: starOpacity[index])
+                // 星星层
+                VStack {
+                    HStack(spacing: 20) {
+                        ForEach(0..<20, id: \.self) { index in
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.white)
+                                .opacity(starOpacity[index])
+                                .scaleEffect(starScales[index])
+                                .animation(
+                                    Animation.easeInOut(duration: 2)
+                                        .repeatForever(autoreverses: true)
+                                        .delay(Double(index) * 0.1),
+                                    value: starOpacity[index]
+                                )
+                        }
+                    }
+                    Spacer()
                 }
+                .padding(.top, 50)
                 
                 VStack {
                     // 顶部图标和标题固定显示
@@ -192,6 +187,13 @@ struct MainView: View {
                 }
                 Task {
                     await getUpdatedTrollStore()
+                }
+                // 定期更新星星效果
+                Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
+                    for i in 0..<starOpacity.count {
+                        starOpacity[i] = Double.random(in: 0.1...0.5)
+                        starScales[i] = Double.random(in: 0.8...1.2)
+                    }
                 }
             }
             .onChange(of: isShowingOTAAlert) { _ in
