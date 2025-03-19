@@ -22,23 +22,27 @@ struct UnsandboxView: View {
                 .foregroundColor(.white)
             Button(action: {
                 UIImpactFeedbackGenerator().impactOccurred()
-                // 先请求系统权限
-                let url = URL(string: "com.apple.app-sandbox.read-write")!
-                UIApplication.shared.open(url) { success in
-                    if success {
-                        // 权限请求成功后再执行解除沙盒操作
-                        grant_full_disk_access({ error in
-                            if let error = error {
-                                Logger.log("利用 MacDirtyCow 漏洞失败")
-                                NSLog("Failed to MacDirtyCow - \(error.localizedDescription)")
-                            }
-                            withAnimation {
-                                isShowingMDCAlert = false
-                            }
-                        })
-                    } else {
-                        Logger.log("无法打开系统权限设置", type: .error)
+                
+                // 使用新的权限请求方式
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url, options: [:]) { _ in
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            // 延迟执行 MacDirtyCow 操作，给用户时间进行授权
+                            grant_full_disk_access({ error in
+                                if let error = error {
+                                    Logger.log("利用 MacDirtyCow 漏洞失败，请重试")
+                                    Logger.log("错误信息：\(error.localizedDescription)", type: .error)
+                                } else {
+                                    Logger.log("成功获取权限", type: .success)
+                                    withAnimation {
+                                        isShowingMDCAlert = false
+                                    }
+                                }
+                            })
+                        }
                     }
+                } else {
+                    Logger.log("无法打开系统设置", type: .error)
                 }
             }, label: {
                 ZStack {
