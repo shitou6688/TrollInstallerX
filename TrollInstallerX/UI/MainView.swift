@@ -29,6 +29,7 @@ struct MainView: View {
     
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
+    @ObservedObject var activationManager = ActivationManager.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
@@ -94,11 +95,18 @@ struct MainView: View {
                         .background(Color.white.opacity(0.2))
                         .cornerRadius(10)
                     }
-                    .disabled(!device.isSupported || isInstalling)
+                    .disabled(!device.isSupported || isInstalling || !activationManager.isActivated)
                     .opacity(isInstalling ? 0.5 : 1)
                     .padding(.bottom, 50)
                 }
-                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert || activationManager.showActivationPrompt) ? 10 : 0)
+                
+                // 激活码验证弹窗
+                if activationManager.showActivationPrompt {
+                    PopupView(isShowingAlert: $activationManager.showActivationPrompt, shouldAllowDismiss: false) {
+                        ActivationView()
+                    }
+                }
                 
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
@@ -124,7 +132,7 @@ struct MainView: View {
             }
             .onChange(of: isInstalling) { _ in
                 Task {
-                    if device.isSupported {
+                    if device.isSupported && activationManager.isActivated {
                         if device.supportsDirectInstall {
                             installedSuccessfully = await doDirectInstall(device)
                         } else {
@@ -143,6 +151,7 @@ struct MainView: View {
                 }
             }
             .onAppear {
+                activationManager.checkActivation()
                 if device.isSupported {
                     withAnimation {
                         // 不再显示 OTA 弹窗
