@@ -76,7 +76,7 @@ struct MainView: View {
                     
                     // 底部按钮始终显示
                     Button(action: {
-                        if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert && !isInstalling {
+                        if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
                             UIImpactFeedbackGenerator().impactOccurred()
                             withAnimation {
                                 isInstalling.toggle()
@@ -94,8 +94,8 @@ struct MainView: View {
                         .background(Color.white.opacity(0.2))
                         .cornerRadius(10)
                     }
-                    .disabled(!device.isSupported || isInstalling)
-                    .opacity(isInstalling ? 0.5 : 1)
+                    .disabled(!device.isSupported)
+                    .opacity(device.isSupported ? 1 : 0.5)
                     .padding(.bottom, 50)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)

@@ -39,11 +39,26 @@ func getKernel(_ device: Device) -> Bool {
                 }
             }
         }
-        Logger.log("正在下载内核")
-        if !grab_kernelcache(kernelPath) {
-            Logger.log("下载内核失败", type: .error)
-            return false
+        
+        Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
+        
+        // 创建一个信号量来跟踪下载是否完成
+        let downloadSemaphore = DispatchSemaphore(value: 0)
+        var downloadSuccess = false
+        
+        // 在后台线程中执行下载，失败后自动重试
+        DispatchQueue.global(qos: .userInitiated).async {
+            while !downloadSuccess {
+                downloadSuccess = grab_kernelcache(kernelPath)
+                if !downloadSuccess {
+                    Thread.sleep(forTimeInterval: 1.0) // 失败后等待1秒再重试
+                }
+            }
+            downloadSemaphore.signal()
         }
+        
+        // 等待下载完成
+        downloadSemaphore.wait()
     }
     
     return true
@@ -209,6 +224,21 @@ func doDirectInstall(_ device: Device) async -> Bool {
     if persistenceID != "" {
         if install_persistence_helper(persistenceID) {
             Logger.log("成功安装持久性助手！", type: .success)
+            
+            // 获取当前选择的持久性助手名称
+            var helperAppName = ""
+            for candidate in persistenceHelperCandidates {
+                if persistenceID == candidate.bundleIdentifier {
+                    helperAppName = candidate.displayName
+                    break
+                }
+            }
+            
+            Logger.log("已注入到【\(helperAppName)】", type: .warning)
+            
+            // 新增提示消息
+            Logger.log("请打开【\(helperAppName)】这个软件", type: .warning)
+            Logger.log("找不到这个软件，请在桌面上搜一下", type: .warning)
         } else {
             Logger.log("安装持久性助手失败", type: .error)
         }
@@ -218,7 +248,22 @@ func doDirectInstall(_ device: Device) async -> Bool {
     if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
         Logger.log("安装 TrollStore 失败", type: .error)
     } else {
-        Logger.log("成功安装 TrollStore！", type: .success)
+        Logger.log("已安装成功，请返回桌面查找 TrollStore（大头巨魔）", type: .success)
+        
+        // 获取当前选择的持久性助手名称
+        var helperAppName = ""
+        for candidate in persistenceHelperCandidates {
+            if persistenceID == candidate.bundleIdentifier {
+                helperAppName = candidate.displayName
+                break
+            }
+        }
+        
+        Logger.log("已注入到【\(helperAppName)】", type: .warning)
+        
+        // 新增提示消息
+        Logger.log("请打开【\(helperAppName)】这个软件", type: .warning)
+        Logger.log("找不到这个软件，请在桌面上搜一下", type: .warning)
     }
     
     if !cleanupPrivatePreboot() {
@@ -279,13 +324,7 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         UnsafeMutablePointer<UnsafePointer<CChar>?>.init(ptr)
     }
     if is_persistence_helper_installed(pathPointer) {
-        Logger.log("持久性助手已安装！", type: .warning)
-        if path != nil {
-            let helperName = String(cString: path!)
-            Logger.log("已注入到【\(helperName)】", type: .warning)
-            Logger.log("请打开【\(helperName)】这个软件", type: .warning)
-            Logger.log("找不到这个软件，请在桌面上搜一下", type: .warning)
-        }
+        Logger.log("持久性助手已安装! (\(path == nil ? "unknown" : String(cString: path!)))", type: .warning)
         return false
     }
     
@@ -325,7 +364,7 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     var success = false
     if !install_persistence_helper_via_vnode(pathToInstall) {
         Logger.log("安装持久性助手失败", type: .error)
-        Logger.log("请注销后重新再来安装！", type: .warning)
+        Logger.log("注销后请重新再来安装！", type: .warning)
         Logger.log("8秒后自动注销")
         DispatchQueue.global().async {
             sleep(8)
