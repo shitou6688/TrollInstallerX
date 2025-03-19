@@ -40,28 +40,31 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 最多尝试3次下载
-        let maxRetries = 3
-        var retryCount = 0
+        Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
-        while retryCount < maxRetries {
-            retryCount += 1
-            Logger.log("正在尝试第\(retryCount)次下载内核文件...", type: .warning)
-            
-            if grab_kernelcache(kernelPath) {
-                Logger.log("内核文件下载成功！", type: .success)
-                return true
-            }
-            
-            if retryCount < maxRetries {
-                Logger.log("下载失败，3秒后重试...", type: .warning)
-                sleep(3)
-            } else {
-                Logger.log("内核文件下载失败，请检查网络连接后重试", type: .error)
-                return false
-            }
+        // 创建一个信号量来跟踪下载是否完成
+        let downloadSemaphore = DispatchSemaphore(value: 0)
+        var downloadSuccess = false
+        
+        // 在后台线程中执行下载
+        DispatchQueue.global(qos: .userInitiated).async {
+            downloadSuccess = grab_kernelcache(kernelPath)
+            downloadSemaphore.signal()
         }
-        return false
+        
+        // 等待下载完成或超时
+        let timeoutResult = downloadSemaphore.wait(timeout: .now() + 60) // 60秒超时
+        
+        if timeoutResult == .timedOut {
+            Logger.log("如果长时间没有响应，请关机重启手机或者更换一下网络再试", type: .warning)
+            // 继续等待下载完成
+            downloadSemaphore.wait()
+        }
+        
+        if !downloadSuccess {
+            Logger.log("下载内核失败", type: .error)
+            return false
+        }
     }
     
     return true
