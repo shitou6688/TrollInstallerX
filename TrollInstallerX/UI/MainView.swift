@@ -24,6 +24,10 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
+    // 背景渐变动画状态
+    @State private var gradientStart = UnitPoint(x: 0, y: 0)
+    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
+    
     // 星星动画状态
     @State private var stars: [Star] = []
     
@@ -42,7 +46,7 @@ struct MainView: View {
             Star(
                 position: CGPoint(
                     x: CGFloat.random(in: 0...geometry.size.width),
-                    y: CGFloat.random(in: 0...geometry.size.height / 2)
+                    y: CGFloat.random(in: 0...geometry.size.height / 4)
                 ),
                 opacity: Double.random(in: 0.1...0.5),
                 scale: CGFloat.random(in: 0.5...1.5),
@@ -60,13 +64,19 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 静态背景渐变
+                // 带有呼吸效果的背景渐变
                 LinearGradient(
                     gradient: Gradient(colors: colors),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: gradientStart,
+                    endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
+                .onAppear {
+                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
+                        gradientStart = UnitPoint(x: 1, y: 1)
+                        gradientEnd = UnitPoint(x: 0, y: 0)
+                    }
+                }
                 
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
