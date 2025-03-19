@@ -31,6 +31,10 @@ struct MainView: View {
     
     @State private var backgroundOffset = CGSize(width: 0, height: 0)
     
+    @State private var backgroundScale: CGFloat = 1.0
+    @State private var backgroundRotation: Double = 0
+    @State private var backgroundCenter = UnitPoint(x: 0.5, y: 0.5)
+    
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
@@ -41,6 +45,14 @@ struct MainView: View {
         Color(hex: 0x0450d1),   // 靛蓝
         Color(hex: 0x3A7CA5),   // 柔和蓝灰
         Color(hex: 0x5C9EAD)    // 青色
+    ]
+    
+    let backgroundColors = [
+        Color(hex: 0x0482d1).opacity(0.8),   // 深蓝
+        Color(hex: 0x0566ed).opacity(0.6),   // 明亮蓝
+        Color(hex: 0x0450d1).opacity(0.7),   // 靛蓝
+        Color(hex: 0x3A7CA5).opacity(0.5),   // 柔和蓝灰
+        Color(hex: 0x5C9EAD).opacity(0.4)    // 青色
     ]
     
     var body: some View {
@@ -63,20 +75,29 @@ struct MainView: View {
                     .blur(radius: 2)  // 轻微模糊效果
                     .brightness(-0.1)  // 略微调暗
                 
-                // 动态渐变背景
-                LinearGradient(
-                    gradient: Gradient(colors: colors),
-                    startPoint: gradientStart,
-                    endPoint: gradientEnd
+                // 动态径向渐变背景
+                RadialGradient(
+                    gradient: Gradient(colors: backgroundColors),
+                    center: backgroundCenter,
+                    startRadius: 10,
+                    endRadius: max(geometry.size.width, geometry.size.height)
                 )
                 .ignoresSafeArea()
-                .animation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true))
+                .scaleEffect(backgroundScale)
+                .rotationEffect(Angle(degrees: backgroundRotation))
+                .animation(
+                    .easeInOut(duration: 8)
+                    .repeatForever(autoreverses: true)
+                )
                 .onAppear {
                     withAnimation {
-                        gradientStart = UnitPoint(x: 1, y: 1)
-                        gradientEnd = UnitPoint(x: 0, y: 0)
+                        backgroundScale = 1.2
+                        backgroundRotation = 45
+                        backgroundCenter = UnitPoint(x: 0.7, y: 0.3)
                     }
                 }
+                .blur(radius: 30)
+                .brightness(-0.1)
                 
                 VStack {
                     // 顶部图标和标题固定显示
