@@ -24,73 +24,96 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
-    // 星星呼吸效果的状态
-    @State private var starOpacity: [Double] = (0..<20).map { _ in Double.random(in: 0.1...0.5) }
-    @State private var starScales: [Double] = (0..<20).map { _ in Double.random(in: 0.8...1.2) }
+    // 背景渐变动画状态
+    @State private var gradientStart = UnitPoint(x: 0, y: 0)
+    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
+    
+    // 星星动画状态
+    @State private var stars: [Star] = []
+    
+    // 星星结构体
+    struct Star: Identifiable {
+        let id = UUID()
+        var position: CGPoint
+        var opacity: Double
+        var scale: CGFloat
+        var animationDuration: Double
+    }
+    
+    // 生成星星
+    func generateStars(in geometry: GeometryProxy) -> [Star] {
+        return (0..<20).map { _ in
+            Star(
+                position: CGPoint(
+                    x: CGFloat.random(in: 0...geometry.size.width),
+                    y: CGFloat.random(in: 0...geometry.size.height / 2)
+                ),
+                opacity: Double.random(in: 0.1...0.5),
+                scale: CGFloat.random(in: 0.5...1.5),
+                animationDuration: Double.random(in: 1...3)
+            )
+        }
+    }
     
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [
-        Color(hex: 0x0482d1),   // 深蓝
-        Color(hex: 0x0566ed),   // 中蓝
-        Color(hex: 0x87CEEB),   // 天蓝
-        Color(hex: 0x1E90FF)    // 道奇蓝
-    ]
+    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 多色渐变背景
+                // 带有呼吸效果的背景渐变
                 LinearGradient(
                     gradient: Gradient(colors: colors),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: gradientStart,
+                    endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
-                
-                // 星星层
-                VStack {
-                    HStack(spacing: 20) {
-                        ForEach(0..<20, id: \.self) { index in
-                            Image(systemName: "star.fill")
-                                .foregroundColor(.white)
-                                .opacity(starOpacity[index])
-                                .scaleEffect(starScales[index])
-                                .animation(
-                                    Animation.easeInOut(duration: 2)
-                                        .repeatForever(autoreverses: true)
-                                        .delay(Double(index) * 0.1),
-                                    value: starOpacity[index]
-                                )
-                        }
+                .onAppear {
+                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
+                        gradientStart = UnitPoint(x: 1, y: 1)
+                        gradientEnd = UnitPoint(x: 0, y: 0)
                     }
-                    Spacer()
                 }
-                .padding(.top, 50)
                 
-                VStack(spacing: 20) {
-                    // 顶部图标和标题居中显示
-                    VStack(alignment: .center, spacing: 10) {
+                // 星星动画层
+                ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.white)
+                        .position(star.position)
+                        .opacity(star.opacity)
+                        .scaleEffect(star.scale)
+                        .animation(
+                            Animation.easeInOut(duration: star.animationDuration)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double.random(in: 0...2)),
+                            value: star.opacity
+                        )
+                }
+                
+                VStack {
+                    // 顶部图标和标题固定显示
+                    VStack {
                         Image("Icon")
                             .resizable()
                             .cornerRadius(22)
-                            .frame(width: 100, height: 100)
+                            .frame(maxWidth: 100, maxHeight: 100)
                             .shadow(radius: 10)
-                        
                         Text("巨魔安装器X")
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
-                        
                         Text("开发者：Alfie CG")
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
-                        
                         Text("iOS 14.0 - 16.6.1")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
                     }
+                    .padding(.top, 50)
+                    
+                    Spacer()
                     
                     // 安装状态显示（如果正在安装）
                     if isInstalling {
@@ -102,7 +125,9 @@ struct MainView: View {
                             .transition(.opacity)
                     }
                     
-                    // 底部按钮居中
+                    Spacer()
+                    
+                    // 底部按钮始终显示
                     Button(action: {
                         if !device.isSupported {
                             Logger.log("您的设备版本不支持！", type: .error)
@@ -129,11 +154,10 @@ struct MainView: View {
                     }
                     .disabled(!device.isSupported || isInstalling)
                     .opacity(isInstalling ? 0.5 : 1)
+                    .padding(.bottom, 50)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
-                // 弹窗层保持不变
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
                         TrollHelperOTAView(arm64eVersion: .constant(false))
@@ -187,13 +211,7 @@ struct MainView: View {
                 Task {
                     await getUpdatedTrollStore()
                 }
-                // 定期更新星星效果
-                Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
-                    for i in 0..<starOpacity.count {
-                        starOpacity[i] = Double.random(in: 0.1...0.5)
-                        starScales[i] = Double.random(in: 0.8...1.2)
-                    }
-                }
+                stars = generateStars(in: geometry)
             }
             .onChange(of: isShowingOTAAlert) { _ in
                 if !checkForMDCUnsandbox() && MacDirtyCow.supports(device) && !isShowingOTAAlert && device.supportsOTA { // User has just dismissed alert
