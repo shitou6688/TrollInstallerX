@@ -14,11 +14,6 @@ struct SettingsView: View {
     @AppStorage("exploitFlavour", store: TIXDefaults()) var exploitFlavour: String = ""
     @AppStorage("verbose", store: TIXDefaults()) var verbose: Bool = false
     
-    // 代理配置
-    @State private var proxyHost: String = NetworkConfig.proxyHost ?? ""
-    @State private var proxyPort: String = NetworkConfig.proxyPort.map { String($0) } ?? ""
-    @State private var isProxyEnabled: Bool = NetworkConfig.proxyHost != nil
-    
     var body: some View {
         VStack(spacing: 10) {
             Button(action: {
@@ -39,7 +34,6 @@ struct SettingsView: View {
                 }
             })
             .padding()
-            
             if smith.supports(device) || physpuppet.supports(device) {
                 Picker("Kernel exploit", selection: $exploitFlavour) {
                     Text("landa").foregroundColor(.white).tag("landa")
@@ -54,7 +48,6 @@ struct SettingsView: View {
                 .colorMultiply(.white)
                 .padding()
             }
-            
             VStack {
                 Toggle(isOn: $verbose, label: {
                     Text("详细日志记录")
@@ -64,51 +57,10 @@ struct SettingsView: View {
             }
             .padding()
             
-            // 代理配置
-            VStack {
-                Toggle(isOn: $isProxyEnabled, label: {
-                    Text("启用代理")
-                        .font(.system(size: 17, weight: .regular, design: .rounded))
-                        .foregroundColor(.white)
-                })
-                
-                if isProxyEnabled {
-                    TextField("代理地址", text: $proxyHost)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .foregroundColor(.black)
-                        .padding()
-                    
-                    TextField("代理端口", text: $proxyPort)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .foregroundColor(.black)
-                        .keyboardType(.numberPad)
-                        .padding()
-                }
-            }
-            .padding()
         }
         .onAppear {
             if exploitFlavour == "" {
                 exploitFlavour = physpuppet.supports(device) ? "physpuppet" : "landa"
-            }
-        }
-        .onChange(of: isProxyEnabled) { newValue in
-            if newValue {
-                NetworkConfig.proxyHost = proxyHost.isEmpty ? nil : proxyHost
-                NetworkConfig.proxyPort = Int(proxyPort)
-            } else {
-                NetworkConfig.proxyHost = nil
-                NetworkConfig.proxyPort = nil
-            }
-        }
-        .onChange(of: proxyHost) { newValue in
-            if isProxyEnabled {
-                NetworkConfig.proxyHost = newValue.isEmpty ? nil : newValue
-            }
-        }
-        .onChange(of: proxyPort) { newValue in
-            if isProxyEnabled {
-                NetworkConfig.proxyPort = Int(newValue)
             }
         }
     }

@@ -123,28 +123,4 @@ struct Device {
             return self.version < Version("16.6")
         }
     }
-    
-    var incompatibilityReason: String? {
-        // 针对 15.0-15.1.1 版本的特殊兼容性检查
-        if version >= Version("15.0") && version <= Version("15.1.1") {
-            return "iOS 15.0-15.1.1 存在已知兼容性问题，暂不支持安装"
-        }
-        
-        return nil
-    }
-    
-    var isSupported: Bool {
-        // 使用新增的不兼容性检查
-        if let _ = incompatibilityReason {
-            return false
-        }
-        
-        if self.cpuFamily == .A8 {
-            return self.version < Version("15.2")
-        } else {
-            return (self.version <= Version("16.6.1")) || 
-                   (self.isOnSupported17Beta && 
-                    !((self.cpuFamily == .A15 && !isM2) || self.cpuFamily == .A16))
-        }
-    }
 }
