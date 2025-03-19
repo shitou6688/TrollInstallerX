@@ -59,29 +59,27 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
+    let colors = [
+        Color(hex: 0x0482d1).opacity(0.8),
+        Color(hex: 0x0566ed).opacity(0.6),
+        Color(hex: 0x0450d1).opacity(0.7)
+    ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 带有呼吸效果的背景渐变
+                // 静态的背景渐变
                 LinearGradient(
                     gradient: Gradient(colors: colors),
-                    startPoint: gradientStart,
-                    endPoint: gradientEnd
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                .onAppear {
-                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
-                        gradientStart = UnitPoint(x: 1, y: 1)
-                        gradientEnd = UnitPoint(x: 0, y: 0)
-                    }
-                }
                 
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white)
+                        .foregroundColor(.white.opacity(0.7))  // 稍微降低星星的不透明度
                         .position(star.position)
                         .opacity(star.opacity)
                         .scaleEffect(star.scale)
