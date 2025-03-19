@@ -23,7 +23,9 @@ struct UnsandboxView: View {
             
             VStack(spacing: 10) {
                 Button(action: {
-                    UIApplication.shared.open(URL(string: "com.apple.app-sandbox.read-write")!)
+                    withAnimation {
+                        isShowingMDCAlert = false
+                    }
                 }) {
                     HStack {
                         Text("不允许")
@@ -36,7 +38,16 @@ struct UnsandboxView: View {
                 }
                 
                 Button(action: {
-                    UIApplication.shared.open(URL(string: "com.apple.app-sandbox.read-write://grant")!)
+                    grant_full_disk_access { error in
+                        if let error = error {
+                            Logger.log("解除沙盒失败: \(error.localizedDescription)", type: .error)
+                        } else {
+                            Logger.log("成功解除沙盒", type: .success)
+                            withAnimation {
+                                isShowingMDCAlert = false
+                            }
+                        }
+                    }
                 }) {
                     HStack {
                         Text("好")
