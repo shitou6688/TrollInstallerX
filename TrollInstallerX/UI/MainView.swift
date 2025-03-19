@@ -86,7 +86,7 @@ struct MainView: View {
                         HStack {
                             Image(systemName: "arrow.right.circle")
                                 .foregroundColor(.white)
-                            Text("执行自动化安装程序")
+                            Text(device.isSupported ? "执行自动化安装程序" : "您的设备版本不支持")
                                 .foregroundColor(.white)
                         }
                         .frame(maxWidth: geometry.size.width - 40)
