@@ -96,7 +96,7 @@ struct MainView: View {
                     if isInstalling {
                         LogView(installationFinished: $installationFinished)
                             .frame(maxWidth: geometry.size.width - 40)
-                            .frame(maxHeight: geometry.size.height / 2)
+                            .frame(height: geometry.size.height * 0.6)  // 增加高度到60%
                             .background(Color.white.opacity(0.1))
                             .cornerRadius(15)
                             .transition(.opacity)
