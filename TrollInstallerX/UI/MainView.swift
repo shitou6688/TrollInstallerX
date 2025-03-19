@@ -51,7 +51,7 @@ struct MainView: View {
                     endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
-                .animation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true))
+                .animation(Animation.easeInOut(duration: 10).repeatForever(autoreverses: true))
                 .onAppear {
                     withAnimation {
                         gradientStart = UnitPoint(x: 1, y: 1)
@@ -74,11 +74,11 @@ struct MainView: View {
                             .scaleEffect(breatheScale)
                             .onAppear {
                                 withAnimation(
-                                    .easeInOut(duration: 2)
+                                    .easeInOut(duration: 3)
                                     .repeatForever(autoreverses: true)
                                 ) {
-                                    rotationDegree = 10
-                                    breatheScale = 1.1
+                                    rotationDegree = 5
+                                    breatheScale = 1.05
                                 }
                             }
                         
@@ -98,18 +98,6 @@ struct MainView: View {
                             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     }
                     .padding(.top, 50)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.white.opacity(0.1),
-                                Color.white.opacity(0.05)
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .cornerRadius(20)
-                        .padding(.horizontal, 20)
-                    )
                     
                     Spacer()
                     
