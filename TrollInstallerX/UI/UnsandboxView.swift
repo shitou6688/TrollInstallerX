@@ -9,46 +9,44 @@ import SwiftUI
 
 struct UnsandboxView: View {
     @Binding var isShowingMDCAlert: Bool
-    var body: some View {            
-        VStack {
+    
+    var body: some View {
+        VStack(spacing: 20) {
             Text("解除沙盒")
-                .font(.system(size: 23, weight: .semibold, design: .rounded))
+                .font(.system(size: 30, weight: .bold, design: .rounded))
                 .foregroundColor(.white)
-                .padding()
-            Text("TrollInstallerX 使用100%可靠的 MacDirtyCow 漏洞来解除沙盒并复制内核缓存。按下下方的按钮运行该漏洞利用程序-您只需要这样操作一次。")
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .multilineTextAlignment(.center)
-                .foregroundColor(.white)
-                .padding(.horizontal)
             
-            VStack(spacing: 10) {
-                Button(action: {
-                    UIApplication.shared.open(URL(string: "com.apple.app-sandbox.read-write")!)
-                }) {
-                    HStack {
-                        Text("不允许")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+            Text("TrollInstallerX 使用100%可靠的 MacDirtyCow 漏洞来解除沙盒并复制内核缓存。按下下方的按钮运行该漏洞利用程序-您只需要这样操作一次。")
+                .font(.system(size: 17, weight: .regular, design: .rounded))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+            
+            Button(action: {
+                UIImpactFeedbackGenerator().impactOccurred()
+                grant_full_disk_access({ error in
+                    if let error = error {
+                        Logger.log("利用 MacDirtyCow 漏洞失败")
+                        NSLog("Failed to MacDirtyCow - \(error.localizedDescription)")
                     }
-                    .frame(width: 175, height: 45)
-                    .background(Color.white.opacity(0.2))
-                    .cornerRadius(10)
-                }
-                
-                Button(action: {
-                    UIApplication.shared.open(URL(string: "com.apple.app-sandbox.read-write://grant")!)
-                }) {
-                    HStack {
-                        Text("好")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                    withAnimation {
+                        isShowingMDCAlert = false
                     }
-                    .frame(width: 175, height: 45)
+                })
+            }) {
+                Text("解除沙盒")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(width: 200, height: 50)
                     .background(Color.white.opacity(0.2))
-                    .cornerRadius(10)
-                }
+                    .cornerRadius(15)
             }
-            .padding(.vertical)
+            .padding(.top, 10)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            Color(hex: 0x0482d1)
+                .edgesIgnoringSafeArea(.all)
+        )
     }
 }
