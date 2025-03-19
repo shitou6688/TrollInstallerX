@@ -41,64 +41,62 @@ struct MainView: View {
                     .ignoresSafeArea()
                 
                 VStack {
-                    if !isInstalling {
-                        Spacer()
-                        
-                        VStack {
-                            Image("Icon")
-                                .resizable()
-                                .cornerRadius(22)
-                                .frame(maxWidth: 100, maxHeight: 100)
-                                .shadow(radius: 10)
-                            Text("巨魔安装器X")
-                                .font(.system(size: 30, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
-                            Text("开发者：Alfie CG")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.5))
-                            Text("iOS 14.0 - 16.6.1")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.5))
-                        }
-                        .padding(.vertical)
-                        
-                        Spacer()
-                        
-                        // 执行安装按钮
-                        Button(action: {
-                            if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
-                                UIImpactFeedbackGenerator().impactOccurred()
-                                withAnimation {
-                                    isInstalling.toggle()
-                                }
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "arrow.right.circle")
-                                    .foregroundColor(.white)
-                                Text("执行自动化安装程序")
-                                    .foregroundColor(.white)
-                            }
-                            .frame(maxWidth: geometry.size.width - 40)
-                            .frame(height: 50)
-                            .background(Color.white.opacity(0.2))
-                            .cornerRadius(10)
-                        }
-                        .disabled(!device.isSupported)
-                        .padding(.bottom, 50)
-                    } else {
-                        // 安装状态显示
-                        VStack {
-                            Spacer()
-                            LogView(installationFinished: $installationFinished)
-                                .frame(maxWidth: geometry.size.width - 40)
-                                .frame(maxHeight: geometry.size.height / 2)
-                                .background(Color.white.opacity(0.1))
-                                .cornerRadius(15)
-                            Spacer()
-                        }
-                        .transition(.opacity)
+                    // 顶部图标和标题固定显示
+                    VStack {
+                        Image("Icon")
+                            .resizable()
+                            .cornerRadius(22)
+                            .frame(maxWidth: 100, maxHeight: 100)
+                            .shadow(radius: 10)
+                        Text("巨魔安装器X")
+                            .font(.system(size: 30, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text("开发者：Alfie CG")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                        Text("iOS 14.0 - 16.6.1")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
                     }
+                    .padding(.top, 50)
+                    
+                    Spacer()
+                    
+                    // 安装状态显示（如果正在安装）
+                    if isInstalling {
+                        LogView(installationFinished: $installationFinished)
+                            .frame(maxWidth: geometry.size.width - 40)
+                            .frame(maxHeight: geometry.size.height / 2)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(15)
+                            .transition(.opacity)
+                    }
+                    
+                    Spacer()
+                    
+                    // 底部按钮始终显示
+                    Button(action: {
+                        if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert && !isInstalling {
+                            UIImpactFeedbackGenerator().impactOccurred()
+                            withAnimation {
+                                isInstalling.toggle()
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.right.circle")
+                                .foregroundColor(.white)
+                            Text("执行自动化安装程序")
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: geometry.size.width - 40)
+                        .frame(height: 50)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(10)
+                    }
+                    .disabled(!device.isSupported || isInstalling)
+                    .opacity(isInstalling ? 0.5 : 1)
+                    .padding(.bottom, 50)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
