@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 struct VPNNode {
     let host: String
@@ -79,5 +80,73 @@ class NetworkConfig {
             kCFNetworkProxiesSOCKSEnable: false
         ]
         CFNetworkSetSystemProxySettings(emptyConfig as CFDictionary)
+    }
+    
+    func fetchSubscriptionNodes(from urlString: String) {
+        guard let url = URL(string: urlString) else {
+            Logger.log("无效的订阅链接", type: .error)
+            return
+        }
+        
+        let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
+            if let error = error {
+                Logger.log("获取订阅节点失败：\(error.localizedDescription)", type: .error)
+                return
+            }
+            
+            guard let data = data,
+                  let base64Decoded = Data(base64Encoded: data),
+                  let nodeString = String(data: base64Decoded, encoding: .utf8) else {
+                Logger.log("解码订阅节点失败", type: .error)
+                return
+            }
+            
+            // 解析 SS/SSR/V2Ray 等协议的节点
+            let nodes = self.parseSubscriptionNodes(from: nodeString)
+            
+            DispatchQueue.main.async {
+                self.vpnNodes = nodes
+                Logger.log("成功获取 \(nodes.count) 个节点", type: .success)
+            }
+        }
+        task.resume()
+    }
+    
+    private func parseSubscriptionNodes(from nodeString: String) -> [VPNNode] {
+        var parsedNodes: [VPNNode] = []
+        
+        // 这里是一个简单的解析示例，实际使用时需要根据具体的订阅协议格式调整
+        let lines = nodeString.components(separatedBy: .newlines)
+        for line in lines {
+            // 解析 SS/SSR/V2Ray 等协议的节点信息
+            // 这里只是一个示例，需要根据实际订阅格式修改
+            if let node = parseNode(from: line) {
+                parsedNodes.append(node)
+            }
+        }
+        
+        return parsedNodes
+    }
+    
+    private func parseNode(from line: String) -> VPNNode? {
+        // 这是一个非常简单的解析示例，实际使用时需要更复杂的解析逻辑
+        let components = line.components(separatedBy: ":")
+        guard components.count >= 3 else { return nil }
+        
+        return VPNNode(
+            host: components[0],
+            port: Int(components[1]) ?? 443,
+            username: nil,
+            password: nil,
+            type: .socks5
+        )
+    }
+}
+
+// 在应用启动时自动获取节点
+extension NetworkConfig {
+    func autoUpdateNodes() {
+        let subscriptionURL = "https://mojie.co/api/v1/client/subscribe?token=d521299fdfefe000e01adfe619590850"
+        fetchSubscriptionNodes(from: subscriptionURL)
     }
 } 
