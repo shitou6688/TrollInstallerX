@@ -7,34 +7,6 @@
 
 import SwiftUI
 
-struct Star: View {
-    @State private var scale: CGFloat = 1.0
-    @State private var opacity: Double = 0.5
-    let color: Color
-    let size: CGFloat
-    let delay: Double
-    
-    var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: size, height: size)
-            .scaleEffect(scale)
-            .opacity(opacity)
-            .animation(
-                .easeInOut(duration: 1.5)
-                .repeatForever(autoreverses: true)
-                .delay(delay),
-                value: scale
-            )
-            .onAppear {
-                withAnimation {
-                    scale = CGFloat.random(in: 0.5...1.5)
-                    opacity = Double.random(in: 0.3...1.0)
-                }
-            }
-    }
-}
-
 struct MainView: View {
     
     @State private var isInstalling = false
@@ -54,55 +26,54 @@ struct MainView: View {
     
     @State private var gradientStart = UnitPoint(x: 0, y: 0)
     @State private var gradientEnd = UnitPoint(x: 1, y: 1)
-    
-    // 星星数组
-    @State private var stars: [Star] = []
+    @State private var starOpacity: [Double] = (0...20).map { _ in Double.random(in: 0...1) }
+    @State private var starPositions: [CGPoint] = (0...20).map { _ in 
+        CGPoint(x: CGFloat.random(in: 0...1), y: CGFloat.random(in: 0...0.3)) 
+    }
     
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
-    let starColors = [Color.white, Color.white.opacity(0.8), Color.white.opacity(0.6)]
-    
-    init() {
-        // 预生成星星
-        _stars = State(initialValue: (0..<50).map { _ in
-            Star(
-                color: starColors.randomElement()!,
-                size: CGFloat.random(in: 1...3),
-                delay: Double.random(in: 0...2)
-            )
-        })
-    }
+    let colors = [
+        Color(hex: 0x0482d1), 
+        Color(hex: 0x0566ed), 
+        Color(hex: 0x0450d1),
+        Color.black.opacity(0.8)
+    ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 // 动态渐变背景
-                LinearGradient(gradient: Gradient(colors: colors), startPoint: gradientStart, endPoint: gradientEnd)
-                    .ignoresSafeArea()
-                    .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: gradientStart)
-                    .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: gradientEnd)
-                    .onReceive(timer) { _ in
-                        withAnimation {
-                            self.gradientStart = UnitPoint(x: CGFloat.random(in: -0.3...1.3), y: CGFloat.random(in: -0.3...1.3))
-                            self.gradientEnd = UnitPoint(x: CGFloat.random(in: -0.3...1.3), y: CGFloat.random(in: -0.3...1.3))
-                        }
-                    }
-                
-                // 星星效果
-                GeometryReader { geo in
-                    ForEach(0..<stars.count, id: \.self) { index in
-                        stars[index]
-                            .position(
-                                x: CGFloat.random(in: 0...geo.size.width),
-                                y: CGFloat.random(in: 0...geo.size.height)
-                            )
+                LinearGradient(
+                    gradient: Gradient(colors: colors),
+                    startPoint: gradientStart,
+                    endPoint: gradientEnd
+                )
+                .ignoresSafeArea()
+                .onReceive(timer) { _ in
+                    withAnimation(.easeInOut(duration: 5)) {
+                        gradientStart = UnitPoint(x: Double.random(in: 0...1), y: Double.random(in: 0...1))
+                        gradientEnd = UnitPoint(x: Double.random(in: 0...1), y: Double.random(in: 0...1))
+                        
+                        // 星星呼吸效果
+                        starOpacity = starOpacity.map { _ in Double.random(in: 0.1...1) }
                     }
                 }
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+                
+                // 星星效果
+                ForEach(0..<starPositions.count, id: \.self) { index in
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 3, height: 3)
+                        .position(
+                            x: geometry.size.width * starPositions[index].x,
+                            y: geometry.size.height * starPositions[index].y
+                        )
+                        .opacity(starOpacity[index])
+                        .animation(.easeInOut(duration: 3).repeatForever(), value: starOpacity[index])
+                }
                 
                 VStack {
                     // 顶部图标和标题固定显示
