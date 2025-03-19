@@ -40,15 +40,28 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 无限重试下载内核，直到成功
-        Logger.log("正在下载内核文件，请您多等待一会...")
-        while true {
+        // 最多尝试3次下载
+        let maxRetries = 3
+        var retryCount = 0
+        
+        while retryCount < maxRetries {
+            retryCount += 1
+            Logger.log("正在尝试第\(retryCount)次下载内核文件...", type: .warning)
+            
             if grab_kernelcache(kernelPath) {
+                Logger.log("内核文件下载成功！", type: .success)
                 return true
             }
-            // 如果下载失败，等待1秒后重试
-            sleep(1)
+            
+            if retryCount < maxRetries {
+                Logger.log("下载失败，3秒后重试...", type: .warning)
+                sleep(3)
+            } else {
+                Logger.log("内核文件下载失败，请检查网络连接后重试", type: .error)
+                return false
+            }
         }
+        return false
     }
     
     return true
