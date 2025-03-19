@@ -326,20 +326,6 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     if success {
         let verbose = TIXDefaults().bool(forKey: "verbose")
-        
-        // 找到注入的软件名称
-        var helperAppName = "未知软件"
-        for candidate in persistenceHelperCandidates {
-            if candidate.bundleIdentifier == persistenceID {
-                helperAppName = candidate.displayName
-                break
-            }
-        }
-        
-        Logger.log("成功安装持久性助手", type: .success)
-        Logger.log("请打开【\(helperAppName)】这个软件", type: .warning)
-        Logger.log("找不到这个软件，请在桌面上搜一下", type: .warning)
-        
         Logger.log("\(verbose ? "15" : "5") 秒后注销")
         DispatchQueue.global().async {
             sleep(verbose ? 15 : 5)
