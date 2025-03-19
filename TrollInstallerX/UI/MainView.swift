@@ -24,15 +24,27 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
+    @State private var gradientStart = UnitPoint(x: 0, y: 0)
+    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
+    
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
+    
+    let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 ZStack {
-                    LinearGradient(colors: [Color(hex: 0x0482d1), Color(hex: 0x0566ed)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    LinearGradient(colors: colors, startPoint: gradientStart, endPoint: gradientEnd)
                         .ignoresSafeArea()
+                        .onReceive(timer) { _ in
+                            withAnimation(.easeInOut(duration: 3)) {
+                                self.gradientStart = UnitPoint(x: gradientEnd.x, y: gradientEnd.y)
+                                self.gradientEnd = UnitPoint(x: Double.random(in: 0...1), y: Double.random(in: 0...1))
+                            }
+                        }
                     VStack {
                         VStack {
                             Image("Icon")
