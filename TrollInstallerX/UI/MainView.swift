@@ -38,15 +38,15 @@ struct MainView: View {
     
     // 生成星星
     func generateStars(in geometry: GeometryProxy) -> [Star] {
-        return (0..<30).map { _ in
+        return (0..<20).map { _ in
             Star(
                 position: CGPoint(
                     x: CGFloat.random(in: 0...geometry.size.width),
-                    y: CGFloat.random(in: 0...geometry.size.height * 0.3) // 限制在顶部区域
+                    y: CGFloat.random(in: 0...geometry.size.height / 2)
                 ),
-                opacity: Double.random(in: 0.1...0.3),
-                scale: CGFloat.random(in: 0.3...0.7),
-                animationDuration: Double.random(in: 3...6)
+                opacity: Double.random(in: 0.1...0.5),
+                scale: CGFloat.random(in: 0.5...1.5),
+                animationDuration: Double.random(in: 1...3)
             )
         }
     }
@@ -71,14 +71,14 @@ struct MainView: View {
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.white)
                         .position(star.position)
                         .opacity(star.opacity)
                         .scaleEffect(star.scale)
                         .animation(
                             Animation.easeInOut(duration: star.animationDuration)
                                 .repeatForever(autoreverses: true)
-                                .delay(Double.random(in: 0...3)),
+                                .delay(Double.random(in: 0...2)),
                             value: star.opacity
                         )
                 }
@@ -146,7 +146,6 @@ struct MainView: View {
                     .opacity(isInstalling ? 0.5 : 1)
                     .padding(.bottom, 50)
                 }
-                .zIndex(10) // 确保内容在星星之上
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
                 if isShowingOTAAlert {

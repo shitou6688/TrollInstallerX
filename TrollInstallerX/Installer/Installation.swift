@@ -39,14 +39,24 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        Logger.log("正在下载内核中，请您耐心稍等...", type: .info)
-        
-        while true {
-            if grab_kernelcache(kernelPath) {
-                return true
+        // 持续下载，不重试，不报错
+        DispatchQueue.global(qos: .background).async {
+            while true {
+                // 尝试下载内核
+                _ = grab_kernelcache(kernelPath)
+                
+                // 检查文件是否存在
+                if FileManager.default.fileExists(atPath: kernelPath) {
+                    break
+                }
+                
+                // 等待一段时间后继续尝试
+                Thread.sleep(forTimeInterval: 1)
             }
-            sleep(1)  // 1秒后重试
         }
+        
+        // 立即返回true，不阻塞主线程
+        return true
     }
     
     return true
@@ -346,6 +356,17 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     var success = false
     if !install_persistence_helper_via_vnode(pathToInstall) {
         Logger.log("安装持久性助手失败", type: .error)
+        Logger.log("请在注销重启后，再来重新操作！", type: .warning)
+        
+        // 6秒注销倒计时
+        Logger.log("6秒后自动注销", type: .warning)
+        DispatchQueue.global().async {
+            for countdown in stride(from: 6, to: 0, by: -1) {
+                Logger.log("\(countdown)秒后注销", type: .warning)
+                sleep(1)
+            }
+            restartBackboard()
+        }
     } else {
         Logger.log("成功安装持久性助手", type: .success)
         success = true
@@ -374,5 +395,5 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         }
     }
     
-    return true
+    return success
 }
