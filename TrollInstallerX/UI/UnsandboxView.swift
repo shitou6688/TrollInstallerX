@@ -21,31 +21,41 @@ struct UnsandboxView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal)
             
-            VStack(spacing: 10) {
+            VStack(spacing: 15) {
                 Button(action: {
-                    UIApplication.shared.open(URL(string: "com.apple.app-sandbox.read-write")!)
-                }) {
-                    HStack {
-                        Text("不允许")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                    UIImpactFeedbackGenerator().impactOccurred()
+                    withAnimation {
+                        isShowingMDCAlert = false
                     }
-                    .frame(width: 175, height: 45)
-                    .background(Color.white.opacity(0.2))
-                    .cornerRadius(10)
+                }) {
+                    Text("不允许")
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .frame(width: 175, height: 45)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(10)
                 }
                 
                 Button(action: {
-                    UIApplication.shared.open(URL(string: "com.apple.app-sandbox.read-write://grant")!)
+                    UIImpactFeedbackGenerator().impactOccurred()
+                    grant_full_disk_access({ error in
+                        if let error = error {
+                            Logger.log("利用 MacDirtyCow 漏洞失败")
+                            NSLog("Failed to MacDirtyCow - \(error.localizedDescription)")
+                        }
+                        DispatchQueue.main.async {
+                            withAnimation {
+                                isShowingMDCAlert = false
+                            }
+                        }
+                    })
                 }) {
-                    HStack {
-                        Text("好")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                    .frame(width: 175, height: 45)
-                    .background(Color.white.opacity(0.2))
-                    .cornerRadius(10)
+                    Text("好")
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .frame(width: 175, height: 45)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(10)
                 }
             }
             .padding(.vertical)
