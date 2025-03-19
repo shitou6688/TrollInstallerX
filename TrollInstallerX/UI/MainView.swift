@@ -31,89 +31,65 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [Color(hex: 0x4CD964), Color(hex: 0x32CD32), Color(hex: 0x228B22)]
+    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                ZStack {
-                    LinearGradient(colors: colors, startPoint: gradientStart, endPoint: gradientEnd)
-                        .ignoresSafeArea()
-                        .onReceive(timer) { _ in
-                            withAnimation(.easeInOut(duration: 3)) {
-                                self.gradientStart = UnitPoint(x: gradientEnd.x, y: gradientEnd.y)
-                                self.gradientEnd = UnitPoint(x: Double.random(in: 0...1), y: Double.random(in: 0...1))
-                            }
-                        }
+                // 修改背景为纯蓝色
+                Color(hex: 0x0482d1)
+                    .ignoresSafeArea()
+                
+                VStack {
+                    Spacer()
+                    
                     VStack {
-                        VStack {
-                            Image("Icon")
-                                .resizable()
-                                .cornerRadius(22)
-                                .frame(maxWidth: 100, maxHeight: 100)
-                                .shadow(radius: 10)
-                            Text("TrollInstallerX")
-                                .font(.system(size: 30, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
-                            Text("开发者：Alfie CG")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.5))
-                            Text("iOS 14.0 - 16.6.1")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.5))
-                        }
-                        .padding(.vertical)
-                        
-                        if !isInstalling {
-                            MenuView(isShowingSettings: $isShowingSettings, isShowingCredits: $isShowingCredits, isShowingMDCAlert: $isShowingMDCAlert, isShowingOTAAlert: $isShowingOTAAlert, device: device)
-                                .frame(maxWidth: geometry.size.width / 1.2, maxHeight: geometry.size.height / 4)
-                                .transition(.scale)
-                                .padding()
-                                .shadow(radius: 10)
-                                .disabled(!device.isSupported)
-                        }
-                        
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .foregroundColor(.white.opacity(0.15))
-                                .frame(maxWidth: geometry.size.width / 1.2)
-                                .frame(maxHeight: isInstalling ? geometry.size.height / 1.75 : 60)
-                                .transition(.scale)
-                                .shadow(radius: 10)
-                            if isInstalling {
-                                LogView(installationFinished: $installationFinished)
-                                    .padding()
-                                    .frame(maxWidth: geometry.size.width / 1.2)
-                                    .frame(maxHeight: geometry.size.height / 1.75)
-                            }
-                            else {
-                                Button(action: {
-                                    if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
-                                        UIImpactFeedbackGenerator().impactOccurred()
-                                        withAnimation {
-                                            isInstalling.toggle()
-                                        }
-                                    }
-                                }, label: {
-                                    Text(device.isSupported ? "安装 TrollStore" : "不支持")
-                                            .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                            .foregroundColor(device.isSupported ? .white : .secondary)
-                                            .padding()
-                                            .frame(maxWidth: geometry.size.width / 1.2)
-                                            .frame(maxHeight: 60)
-                                })
-                                .frame(maxWidth: geometry.size.width / 1.2)
-                                .frame(maxHeight: 60)
-                            }
-                        }
-                        .padding()
-                        .disabled(!device.isSupported)
-                        
-                        
-                        }
-                        .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                        Image("Icon")
+                            .resizable()
+                            .cornerRadius(22)
+                            .frame(maxWidth: 100, maxHeight: 100)
+                            .shadow(radius: 10)
+                        Text("巨魔安装器X")
+                            .font(.system(size: 30, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text("开发者：Alfie CG")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                        Text("iOS 14.0 - 16.6.1")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
                     }
+                    .padding(.vertical)
+                    
+                    Spacer()
+                    
+                    VStack(spacing: 12) {
+                        // 执行安装按钮
+                        Button(action: {
+                            if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
+                                UIImpactFeedbackGenerator().impactOccurred()
+                                withAnimation {
+                                    isInstalling.toggle()
+                                }
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.right.circle")
+                                    .foregroundColor(.white)
+                                Text("执行自动化安装程序")
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: geometry.size.width - 40)
+                            .frame(height: 50)
+                            .background(Color.white.opacity(0.2))
+                            .cornerRadius(10)
+                        }
+                        .disabled(!device.isSupported)
+                    }
+                    .padding(.bottom, 50)
                 }
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
                         TrollHelperOTAView(arm64eVersion: .constant(false))
@@ -135,7 +111,6 @@ struct MainView: View {
                         CreditsView()
                     })
                 }
-            
             }
             .onChange(of: isInstalling) { _ in
                 Task {
@@ -178,7 +153,7 @@ struct MainView: View {
             }
         }
     }
-
+}
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
