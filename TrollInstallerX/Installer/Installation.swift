@@ -209,6 +209,17 @@ func doDirectInstall(_ device: Device) async -> Bool {
     if persistenceID != "" {
         if install_persistence_helper(persistenceID) {
             Logger.log("成功安装持久性助手！", type: .success)
+            
+            // 找到注入的软件名称
+            var helperAppName = "未知软件"
+            for candidate in persistenceHelperCandidates {
+                if candidate.bundleIdentifier == persistenceID {
+                    helperAppName = candidate.displayName
+                    break
+                }
+            }
+            
+            Logger.log("已注入到【\(helperAppName)】", type: .warning)
         } else {
             Logger.log("安装持久性助手失败", type: .error)
         }
@@ -219,6 +230,7 @@ func doDirectInstall(_ device: Device) async -> Bool {
         Logger.log("安装 TrollStore 失败", type: .error)
     } else {
         Logger.log("成功安装 TrollStore！", type: .success)
+        Logger.log("已成功安装TrollStore（大头巨魔），返回桌面即可查看！", type: .warning)
     }
     
     if !cleanupPrivatePreboot() {
@@ -279,7 +291,19 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         UnsafeMutablePointer<UnsafePointer<CChar>?>.init(ptr)
     }
     if is_persistence_helper_installed(pathPointer) {
+        // 找到已安装的软件名称
+        var helperAppName = "未知软件"
+        for candidate in persistenceHelperCandidates {
+            if let installedPath = path, 
+               String(cString: installedPath).contains(candidate.bundleName + ".app") {
+                helperAppName = candidate.displayName
+                break
+            }
+        }
+        
         Logger.log("持久性助手已安装! (\(path == nil ? "unknown" : String(cString: path!)))", type: .warning)
+        Logger.log("请打开【\(helperAppName)】这个软件", type: .warning)
+        Logger.log("找不到这个软件，请在桌面上搜一下", type: .warning)
         return false
     }
     
@@ -326,6 +350,20 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     if success {
         let verbose = TIXDefaults().bool(forKey: "verbose")
+        
+        // 找到注入的软件名称
+        var helperAppName = "未知软件"
+        for candidate in persistenceHelperCandidates {
+            if candidate.bundleIdentifier == persistenceID {
+                helperAppName = candidate.displayName
+                break
+            }
+        }
+        
+        Logger.log("成功安装持久性助手", type: .success)
+        Logger.log("请打开【\(helperAppName)】这个软件", type: .warning)
+        Logger.log("找不到这个软件，请在桌面上搜一下", type: .warning)
+        
         Logger.log("\(verbose ? "15" : "5") 秒后注销")
         DispatchQueue.global().async {
             sleep(verbose ? 15 : 5)
