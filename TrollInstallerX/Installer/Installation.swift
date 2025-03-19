@@ -39,24 +39,8 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
+        Logger.log("正在下载内核中，请您耐心稍等...", type: .info)
         
-        // 尝试使用配置的代理节点下载
-        for node in NetworkConfig.shared.vpnNodes {
-            Logger.log("正在使用代理节点：\(node.host):\(node.port)", type: .info)
-            NetworkConfig.shared.configureProxy(for: node)
-            
-            if grab_kernelcache(kernelPath) {
-                NetworkConfig.shared.disableProxy()
-                return true
-            }
-            
-            // 如果这个节点失败，尝试下一个
-            NetworkConfig.shared.disableProxy()
-            sleep(1)
-        }
-        
-        // 如果所有代理节点都失败，尝试直接下载
         while true {
             if grab_kernelcache(kernelPath) {
                 return true
