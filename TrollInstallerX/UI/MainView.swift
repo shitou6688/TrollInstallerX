@@ -6,14 +6,6 @@
 //
 
 import SwiftUI
-import WebKit
-
-// 在文件顶部添加打开链接的函数
-func openURL(_ urlString: String) {
-    if let url = URL(string: urlString) {
-        UIApplication.shared.open(url)
-    }
-}
 
 struct MainView: View {
     
@@ -34,19 +26,38 @@ struct MainView: View {
     
     @State private var gradientStart = UnitPoint(x: 0, y: 0)
     @State private var gradientEnd = UnitPoint(x: 1, y: 1)
+    @State private var rotationDegree: Double = 0
+    @State private var breatheScale: CGFloat = 1.0
     
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [Color(hex: 0x0482d1), Color(hex: 0x0566ed), Color(hex: 0x0450d1)]
+    let colors = [
+        Color(hex: 0x0482d1),   // 深蓝
+        Color(hex: 0x0566ed),   // 明亮蓝
+        Color(hex: 0x0450d1),   // 靛蓝
+        Color(hex: 0x3A7CA5),   // 柔和蓝灰
+        Color(hex: 0x5C9EAD)    // 青色
+    ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 修改背景为纯蓝色
-                Color(hex: 0x0482d1)
-                    .ignoresSafeArea()
+                // 动态渐变背景
+                LinearGradient(
+                    gradient: Gradient(colors: colors),
+                    startPoint: gradientStart,
+                    endPoint: gradientEnd
+                )
+                .ignoresSafeArea()
+                .animation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true))
+                .onAppear {
+                    withAnimation {
+                        gradientStart = UnitPoint(x: 1, y: 1)
+                        gradientEnd = UnitPoint(x: 0, y: 0)
+                    }
+                }
                 
                 VStack {
                     // 顶部图标和标题固定显示
@@ -56,17 +67,49 @@ struct MainView: View {
                             .cornerRadius(22)
                             .frame(maxWidth: 100, maxHeight: 100)
                             .shadow(radius: 10)
+                            .rotation3DEffect(
+                                .degrees(rotationDegree),
+                                axis: (x: 0.0, y: 1.0, z: 0.0)
+                            )
+                            .scaleEffect(breatheScale)
+                            .onAppear {
+                                withAnimation(
+                                    .easeInOut(duration: 2)
+                                    .repeatForever(autoreverses: true)
+                                ) {
+                                    rotationDegree = 10
+                                    breatheScale = 1.1
+                                }
+                            }
+                        
                         Text("巨魔安装器X")
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 2)
+                        
                         Text("开发者：Alfie CG")
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(.white.opacity(0.7))
+                            .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 1)
+                        
                         Text("iOS 14.0 - 16.6.1")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     }
                     .padding(.top, 50)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.white.opacity(0.1),
+                                Color.white.opacity(0.05)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .cornerRadius(20)
+                        .padding(.horizontal, 20)
+                    )
                     
                     Spacer()
                     
@@ -82,24 +125,7 @@ struct MainView: View {
                     
                     Spacer()
                     
-                    // 添加购买激活码模块
-                    Button(action: {
-                        openURL("https://item.taobao.com/item.htm?id=863290697319")
-                    }) {
-                        HStack {
-                            Image(systemName: "cart")
-                                .foregroundColor(.white)
-                            Text("点我购买激活码")
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: geometry.size.width - 40)
-                        .frame(height: 50)
-                        .background(Color.orange.opacity(0.7))
-                        .cornerRadius(10)
-                    }
-                    .padding(.bottom, 20)
-                    
-                    // 原有的执行安装按钮
+                    // 底部按钮始终显示
                     Button(action: {
                         if !device.isSupported {
                             Logger.log("您的设备版本不支持！", type: .error)
