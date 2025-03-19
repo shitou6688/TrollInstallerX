@@ -34,11 +34,11 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x0482d1),   // 深蓝
-        Color(hex: 0x0566ed),   // 明亮蓝
-        Color(hex: 0x0450d1),   // 靛蓝
+        Color(hex: 0x0450d1),   // 深靛蓝
         Color(hex: 0x3A7CA5),   // 柔和蓝灰
-        Color(hex: 0x5C9EAD)    // 青色
+        Color(hex: 0x5C9EAD),   // 青色
+        Color(hex: 0x1E4E8C),   // 深蓝
+        Color(hex: 0x2C3E50)    // 深蓝灰
     ]
     
     var body: some View {
