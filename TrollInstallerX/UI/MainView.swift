@@ -105,14 +105,15 @@ struct MainView: View {
                     .background(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color.white.opacity(0.1),
-                                Color.white.opacity(0.05)
+                                Color.white.opacity(0.05),
+                                Color.white.opacity(0.02)
                             ]),
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .cornerRadius(20)
-                        .padding(.horizontal, 20)
+                        .cornerRadius(15)
+                        .shadow(color: .white.opacity(0.1), radius: 10, x: 0, y: 2)
+                        .padding(.horizontal, 30)
                     )
                     
                     Spacer()
