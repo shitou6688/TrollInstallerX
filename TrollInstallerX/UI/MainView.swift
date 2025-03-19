@@ -42,23 +42,23 @@ struct MainView: View {
                 
                 VStack {
                     // 顶部图标和标题固定显示
-                    VStack(spacing: 15) {
+                    VStack {
                         Image("Icon")
                             .resizable()
                             .cornerRadius(22)
-                            .frame(width: geometry.size.width * 0.25, height: geometry.size.width * 0.25)
+                            .frame(maxWidth: 100, maxHeight: 100)
                             .shadow(radius: 10)
                         Text("巨魔安装器X")
-                            .font(.system(size: geometry.size.width * 0.08, weight: .semibold, design: .rounded))
+                            .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
                         Text("开发者：Alfie CG")
-                            .font(.system(size: geometry.size.width * 0.045, weight: .semibold, design: .rounded))
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
                         Text("iOS 14.0 - 16.6.1")
-                            .font(.system(size: geometry.size.width * 0.035, weight: .semibold, design: .rounded))
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
                     }
-                    .padding(.top, geometry.size.height * 0.1)
+                    .padding(.top, 50)
                     
                     Spacer()
                     
@@ -66,7 +66,7 @@ struct MainView: View {
                     if isInstalling {
                         LogView(installationFinished: $installationFinished)
                             .frame(maxWidth: geometry.size.width - 40)
-                            .frame(height: geometry.size.height * 0.4)
+                            .frame(maxHeight: geometry.size.height / 2)
                             .background(Color.white.opacity(0.1))
                             .cornerRadius(15)
                             .transition(.opacity)
@@ -90,13 +90,13 @@ struct MainView: View {
                                 .foregroundColor(.white)
                         }
                         .frame(maxWidth: geometry.size.width - 40)
-                        .frame(height: geometry.size.height * 0.06)
+                        .frame(height: 50)
                         .background(Color.white.opacity(0.2))
                         .cornerRadius(10)
                     }
                     .disabled(!device.isSupported || isInstalling)
                     .opacity(isInstalling ? 0.5 : 1)
-                    .padding(.bottom, geometry.size.height * 0.05)
+                    .padding(.bottom, 50)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
