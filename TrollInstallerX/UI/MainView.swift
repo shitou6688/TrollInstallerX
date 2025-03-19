@@ -15,6 +15,7 @@ struct MainView: View {
     
     @State private var isShowingMDCAlert = false
     @State private var isShowingOTAAlert = false
+    // 我们不再使用这个变量，因为现在自动选择持久性助手
     @State private var isShowingHelperAlert = false
     
     @State private var isShowingSettings = false
@@ -26,6 +27,7 @@ struct MainView: View {
     @State private var gradientStart = UnitPoint(x: 0, y: 0)
     @State private var gradientEnd = UnitPoint(x: 1, y: 1)
     
+    // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
@@ -34,12 +36,12 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
+                // 修改背景为纯蓝色
                 Color(hex: 0x0482d1)
                     .ignoresSafeArea()
                 
                 VStack {
-                    Spacer()
-                    
+                    // 顶部图标和标题固定显示
                     VStack {
                         Image("Icon")
                             .resizable()
@@ -56,12 +58,25 @@ struct MainView: View {
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
                     }
-                    .padding(.vertical)
+                    .padding(.top, 50)
                     
                     Spacer()
                     
+                    // 安装状态显示（如果正在安装）
+                    if isInstalling {
+                        LogView(installationFinished: $installationFinished)
+                            .frame(maxWidth: geometry.size.width - 40)
+                            .frame(maxHeight: geometry.size.height / 2)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(15)
+                            .transition(.opacity)
+                    }
+                    
+                    Spacer()
+                    
+                    // 底部按钮始终显示
                     Button(action: {
-                        if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
+                        if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert && !isInstalling {
                             UIImpactFeedbackGenerator().impactOccurred()
                             withAnimation {
                                 isInstalling.toggle()
@@ -79,7 +94,8 @@ struct MainView: View {
                         .background(Color.white.opacity(0.2))
                         .cornerRadius(10)
                     }
-                    .disabled(!device.isSupported)
+                    .disabled(!device.isSupported || isInstalling)
+                    .opacity(isInstalling ? 0.5 : 1)
                     .padding(.bottom, 50)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
@@ -119,9 +135,17 @@ struct MainView: View {
                     UINotificationFeedbackGenerator().notificationOccurred(installedSuccessfully ? .success : .error)
                 }
             }
+            .onChange(of: isShowingOTAAlert) { new in
+                if !new {
+                    withAnimation {
+                        isShowingMDCAlert = !checkForMDCUnsandbox() && MacDirtyCow.supports(device)
+                    }
+                }
+            }
             .onAppear {
                 if device.isSupported {
                     withAnimation {
+                        // 不再显示 OTA 弹窗
                         isShowingOTAAlert = false
                         isShowingMDCAlert = !checkForMDCUnsandbox() && MacDirtyCow.supports(device)
                     }
@@ -131,7 +155,11 @@ struct MainView: View {
                 }
             }
             .onChange(of: isShowingOTAAlert) { _ in
-                // 移除这个onChange事件，因为我们不再需要OTA相关的逻辑
+                if !checkForMDCUnsandbox() && MacDirtyCow.supports(device) && !isShowingOTAAlert && device.supportsOTA { // User has just dismissed alert
+                    withAnimation {
+                        isShowingMDCAlert = true
+                    }
+                }
             }
         }
     }
