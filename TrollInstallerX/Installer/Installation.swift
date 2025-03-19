@@ -46,25 +46,19 @@ func getKernel(_ device: Device) -> Bool {
         let downloadSemaphore = DispatchSemaphore(value: 0)
         var downloadSuccess = false
         
-        // 在后台线程中执行下载
+        // 在后台线程中执行下载，失败后自动重试
         DispatchQueue.global(qos: .userInitiated).async {
-            downloadSuccess = grab_kernelcache(kernelPath)
+            while !downloadSuccess {
+                downloadSuccess = grab_kernelcache(kernelPath)
+                if !downloadSuccess {
+                    Thread.sleep(forTimeInterval: 1.0) // 失败后等待1秒再重试
+                }
+            }
             downloadSemaphore.signal()
         }
         
-        // 等待下载完成或超时
-        let timeoutResult = downloadSemaphore.wait(timeout: .now() + 60) // 60秒超时
-        
-        if timeoutResult == .timedOut {
-            Logger.log("如果长时间没有响应，请关机重启手机或者更换一下网络再试", type: .warning)
-            // 继续等待下载完成
-            downloadSemaphore.wait()
-        }
-        
-        if !downloadSuccess {
-            Logger.log("下载内核失败", type: .error)
-            return false
-        }
+        // 等待下载完成
+        downloadSemaphore.wait()
     }
     
     return true
