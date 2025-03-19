@@ -9,6 +9,9 @@ import SwiftUI
 
 struct UnsandboxView: View {
     @Binding var isShowingMDCAlert: Bool
+    @State private var isInstalling = false
+    @State private var installationStatus = ""
+    
     var body: some View {            
         VStack {
             Text("解除沙盒")
@@ -20,6 +23,13 @@ struct UnsandboxView: View {
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white)
                 .padding(.horizontal)
+            
+            if isInstalling {
+                Text(installationStatus)
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding()
+            }
             
             VStack(spacing: 10) {
                 Button(action: {
@@ -33,18 +43,26 @@ struct UnsandboxView: View {
                             .foregroundColor(.white)
                     }
                     .frame(width: 175, height: 45)
-                    .background(Color.white.opacity(0.2))
+                    .background(Color.white.opacity(isInstalling ? 0.1 : 0.2))
                     .cornerRadius(10)
                 }
+                .disabled(isInstalling)
                 
                 Button(action: {
+                    isInstalling = true
+                    installationStatus = "正在解除沙盒..."
                     grant_full_disk_access { error in
                         if let error = error {
-                            Logger.log("解除沙盒失败: \(error.localizedDescription)", type: .error)
+                            installationStatus = "解除沙盒失败: \(error.localizedDescription)"
+                            Logger.log(installationStatus, type: .error)
+                            isInstalling = false
                         } else {
-                            Logger.log("成功解除沙盒", type: .success)
-                            withAnimation {
-                                isShowingMDCAlert = false
+                            installationStatus = "成功解除沙盒"
+                            Logger.log(installationStatus, type: .success)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                withAnimation {
+                                    isShowingMDCAlert = false
+                                }
                             }
                         }
                     }
@@ -55,9 +73,10 @@ struct UnsandboxView: View {
                             .foregroundColor(.white)
                     }
                     .frame(width: 175, height: 45)
-                    .background(Color.white.opacity(0.2))
+                    .background(Color.white.opacity(isInstalling ? 0.1 : 0.2))
                     .cornerRadius(10)
                 }
+                .disabled(isInstalling)
             }
             .padding(.vertical)
         }
