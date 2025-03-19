@@ -7,6 +7,52 @@
 
 import SwiftUI
 
+struct Star: View {
+    let size: CGFloat
+    let opacity: Double
+    let color: Color
+    let x: CGFloat
+    let y: CGFloat
+    let animationDuration: Double
+    
+    @State private var isAnimating = false
+    
+    var body: some View {
+        Circle()
+            .fill(color)
+            .frame(width: size, height: size)
+            .opacity(isAnimating ? 0.2 : opacity)
+            .scaleEffect(isAnimating ? 0.5 : 1)
+            .position(x: x, y: y)
+            .animation(
+                .easeInOut(duration: animationDuration)
+                .repeatForever(autoreverses: true),
+                value: isAnimating
+            )
+            .onAppear {
+                isAnimating.toggle()
+            }
+    }
+}
+
+struct StarfieldView: View {
+    let starCount: Int
+    let geometry: GeometryProxy
+    
+    var body: some View {
+        ForEach(0..<starCount, id: \.self) { _ in
+            Star(
+                size: CGFloat.random(in: 1...3),
+                opacity: Double.random(in: 0.3...0.8),
+                color: .white,
+                x: CGFloat.random(in: 0...geometry.size.width),
+                y: CGFloat.random(in: 0...200),
+                animationDuration: Double.random(in: 2...5)
+            )
+        }
+    }
+}
+
 struct MainView: View {
     
     @State private var isInstalling = false
@@ -47,6 +93,9 @@ struct MainView: View {
                             self.gradientEnd = UnitPoint(x: CGFloat.random(in: -0.5...1.5), y: CGFloat.random(in: -0.5...1.5))
                         }
                     }
+                
+                // 添加星星效果
+                StarfieldView(starCount: 20, geometry: geometry)
                 
                 VStack {
                     // 顶部图标和标题固定显示
