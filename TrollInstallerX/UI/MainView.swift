@@ -34,11 +34,10 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x0482d1),   // 深蓝
-        Color(hex: 0x0566ed),   // 明亮蓝
-        Color(hex: 0x0450d1),   // 靛蓝
-        Color(hex: 0x3A7CA5),   // 柔和蓝灰
-        Color(hex: 0x5C9EAD)    // 青色
+        Color(hex: 0x4A90E2),   // 清新蓝
+        Color(hex: 0x50C878),   // 薄荷绿
+        Color(hex: 0x5CACEE),   // 柔和蓝
+        Color(hex: 0x3CB371)    // 海洋绿
     ]
     
     var body: some View {
@@ -51,11 +50,11 @@ struct MainView: View {
                     endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
-                .animation(Animation.easeInOut(duration: 10).repeatForever(autoreverses: true))
+                .animation(Animation.easeInOut(duration: 8).repeatForever(autoreverses: true))
                 .onAppear {
                     withAnimation {
-                        gradientStart = UnitPoint(x: 1, y: 1)
-                        gradientEnd = UnitPoint(x: 0, y: 0)
+                        gradientStart = UnitPoint(x: 1, y: 0)
+                        gradientEnd = UnitPoint(x: 0, y: 1)
                     }
                 }
                 
@@ -66,38 +65,34 @@ struct MainView: View {
                             .resizable()
                             .cornerRadius(22)
                             .frame(maxWidth: 100, maxHeight: 100)
-                            .shadow(radius: 10)
-                            .rotation3DEffect(
-                                .degrees(rotationDegree),
-                                axis: (x: 0.0, y: 1.0, z: 0.0)
+                            .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 2)
                             )
-                            .scaleEffect(breatheScale)
-                            .onAppear {
-                                withAnimation(
-                                    .easeInOut(duration: 3)
-                                    .repeatForever(autoreverses: true)
-                                ) {
-                                    rotationDegree = 5
-                                    breatheScale = 1.05
-                                }
-                            }
                         
                         Text("巨魔安装器X")
-                            .font(.system(size: 30, weight: .semibold, design: .rounded))
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 2)
                         
                         Text("开发者：Alfie CG")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.7))
+                            .font(.system(size: 18, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.8))
                             .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 1)
                         
                         Text("iOS 14.0 - 16.6.1")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
                             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     }
                     .padding(.top, 50)
+                    .background(
+                        Color.white.opacity(0.1)
+                        .cornerRadius(20)
+                        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    )
+                    .padding(.horizontal, 30)
                     
                     Spacer()
                     
