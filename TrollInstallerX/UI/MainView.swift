@@ -38,7 +38,7 @@ struct MainView: View {
             ZStack {
                 // 修改背景为纯蓝色
                 Color(hex: 0x0482d1)
-                    .ignoresSafeArea(.all)
+                    .ignoresSafeArea()
                 
                 VStack {
                     // 顶部图标和标题固定显示
@@ -58,7 +58,7 @@ struct MainView: View {
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
                     }
-                    .padding(.top, geometry.safeAreaInsets.top + 20)
+                    .padding(.top, 50)
                     
                     Spacer()
                     
@@ -96,9 +96,9 @@ struct MainView: View {
                     }
                     .disabled(!device.isSupported || isInstalling)
                     .opacity(isInstalling ? 0.5 : 1)
-                    .padding(.bottom, geometry.safeAreaInsets.bottom + 30)
+                    .padding(.bottom, 50)
                 }
-                .edgesIgnoringSafeArea(.all)
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
