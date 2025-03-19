@@ -7,52 +7,6 @@
 
 import SwiftUI
 
-struct Star: View {
-    let size: CGFloat
-    let opacity: Double
-    let position: CGPoint
-    let animationDuration: Double
-    
-    @State private var isAnimating = false
-    
-    var body: some View {
-        Circle()
-            .fill(Color.white)
-            .frame(width: size, height: size)
-            .opacity(isAnimating ? 0.2 : opacity)
-            .position(x: position.x, y: position.y)
-            .animation(
-                .easeInOut(duration: animationDuration)
-                .repeatForever(autoreverses: true),
-                value: isAnimating
-            )
-            .onAppear {
-                isAnimating.toggle()
-            }
-    }
-}
-
-struct StarfieldView: View {
-    let starCount: Int
-    let screenSize: CGSize
-    
-    var body: some View {
-        ZStack {
-            ForEach(0..<starCount, id: \.self) { _ in
-                Star(
-                    size: CGFloat.random(in: 1...3),
-                    opacity: Double.random(in: 0.3...0.8),
-                    position: CGPoint(
-                        x: CGFloat.random(in: 0...screenSize.width),
-                        y: CGFloat.random(in: 0...200)
-                    ),
-                    animationDuration: Double.random(in: 1...3)
-                )
-            }
-        }
-    }
-}
-
 struct MainView: View {
     
     @State private var isInstalling = false
@@ -85,18 +39,14 @@ struct MainView: View {
                 // 动态渐变背景
                 LinearGradient(gradient: Gradient(colors: colors), startPoint: gradientStart, endPoint: gradientEnd)
                     .ignoresSafeArea()
-                    .animation(.easeInOut(duration: 3), value: gradientStart)
-                    .animation(.easeInOut(duration: 3), value: gradientEnd)
+                    .animation(.easeInOut(duration: 4).repeatForever(autoreverses: true), value: gradientStart)
+                    .animation(.easeInOut(duration: 4).repeatForever(autoreverses: true), value: gradientEnd)
                     .onReceive(timer) { _ in
                         withAnimation {
                             self.gradientStart = UnitPoint(x: CGFloat.random(in: -0.5...1.5), y: CGFloat.random(in: -0.5...1.5))
                             self.gradientEnd = UnitPoint(x: CGFloat.random(in: -0.5...1.5), y: CGFloat.random(in: -0.5...1.5))
                         }
                     }
-                
-                // 添加星星效果
-                StarfieldView(starCount: 30, screenSize: geometry.size)
-                    .allowsHitTesting(false)
                 
                 VStack {
                     // 顶部图标和标题固定显示
