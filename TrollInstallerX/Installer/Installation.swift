@@ -6,12 +6,19 @@
 //
 
 import SwiftUI
+import Foundation
+import Network
 
 let fileManager = FileManager.default
 let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
 let docsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].path
 let kernelPath = docsDir + "/kernelcache"
 
+// 添加全局代理配置
+struct NetworkConfig {
+    static var proxyHost: String? = nil
+    static var proxyPort: Int? = nil
+}
 
 func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
@@ -39,8 +46,77 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
+        // 多线程并发下载
+        let semaphore = DispatchSemaphore(value: 0)
+        var downloadSuccess = false
+        
+        // 配置下载会话
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30 // 30秒超时
+        configuration.timeoutIntervalForResource = 300 // 总下载时间5分钟
+        
+        // 如果配置了代理
+        if let proxyHost = NetworkConfig.proxyHost, let proxyPort = NetworkConfig.proxyPort {
+            configuration.connectionProxyDictionary = [
+                kCFNetworkProxiesHTTPEnable: true,
+                kCFNetworkProxiesHTTPProxy: proxyHost,
+                kCFNetworkProxiesHTTPPort: proxyPort,
+                kCFNetworkProxiesHTTPSEnable: true,
+                kCFNetworkProxiesHTTPSProxy: proxyHost,
+                kCFNetworkProxiesHTTPSPort: proxyPort
+            ]
+        }
+        
+        let session = URLSession(configuration: configuration)
+        
+        // 内核下载地址（可以根据需要修改）
+        let kernelURLs = [
+            "https://updates.cdn-apple.com/2024/ios/kernelcache.url",
+            "https://gdmf.apple.com/v2/pmv"
+        ]
+        
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
+        // 并发下载
+        let downloadGroup = DispatchGroup()
+        
+        for urlString in kernelURLs {
+            downloadGroup.enter()
+            
+            guard let url = URL(string: urlString) else {
+                downloadGroup.leave()
+                continue
+            }
+            
+            let task = session.downloadTask(with: url) { (tempURL, response, error) in
+                defer { downloadGroup.leave() }
+                
+                guard let tempURL = tempURL,
+                      let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200 else {
+                    return
+                }
+                
+                do {
+                    try FileManager.default.moveItem(at: tempURL, toPath: kernelPath)
+                    downloadSuccess = true
+                    semaphore.signal()
+                } catch {
+                    NSLog("Kernel download error: \(error)")
+                }
+            }
+            task.resume()
+        }
+        
+        // 等待下载完成或超时
+        _ = downloadGroup.wait(timeout: .now() + 300)
+        
+        if downloadSuccess {
+            return true
+        }
+        
+        // 如果下载失败，使用原有的抓取方法作为备选
+        Logger.log("使用备用下载方法", type: .warning)
         while true {
             if grab_kernelcache(kernelPath) {
                 return true
