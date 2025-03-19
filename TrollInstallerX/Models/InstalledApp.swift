@@ -38,12 +38,12 @@ var persistenceHelperCandidates = [
     InstalledApp(displayName: "测距仪", bundleName: "Measure", bundleIdentifier: "com.apple.measure"),
     InstalledApp(displayName: "指南针", bundleName: "Compass", bundleIdentifier: "com.apple.compass"),
     InstalledApp(displayName: "图书", bundleName: "Books", bundleIdentifier: "com.apple.iBooks"),
-    InstalledApp(displayName: "苹果商店", bundleName: "MobileStore", bundleIdentifier: "com.apple.MobileStore"),
+    InstalledApp(displayName: "iTunes Store", bundleName: "MobileStore", bundleIdentifier: "com.apple.MobileStore"),
     InstalledApp(displayName: "翻译", bundleName: "SequoiaTranslator", bundleIdentifier: "com.apple.Translate"),
     InstalledApp(displayName: "播客", bundleName: "Podcasts", bundleIdentifier: "com.apple.podcasts"),
     InstalledApp(displayName: "计算器", bundleName: "Calculator", bundleIdentifier: "com.apple.calculator"),
     InstalledApp(displayName: "钱包", bundleName: "Passbook", bundleIdentifier: "com.apple.Passbook"),
-    InstalledApp(displayName: "苹果电视", bundleName: "AppleTV", bundleIdentifier: "com.apple.tv"),
+    InstalledApp(displayName: "Apple TV", bundleName: "AppleTV", bundleIdentifier: "com.apple.tv"),
     InstalledApp(displayName: "无边记", bundleName: "Freeform", bundleIdentifier: "com.apple.freeform"),
     InstalledApp(displayName: "股票", bundleName: "Stocks", bundleIdentifier: "com.apple.stocks")
 ]

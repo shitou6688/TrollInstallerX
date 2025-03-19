@@ -29,6 +29,8 @@ struct MainView: View {
     @State private var rotationDegree: Double = 0
     @State private var breatheScale: CGFloat = 1.0
     
+    @State private var backgroundOffset = CGSize(width: 0, height: 0)
+    
     // 我们不再需要显示助手选择对话框，但保留这个变量以避免改动太多代码
     @ObservedObject var helperView = HelperAlert.shared
     
@@ -44,6 +46,23 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
+                // 背景图片，添加缓动动画
+                Image("background")  // 请确保在Assets中添加名为"background"的图片
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .offset(backgroundOffset)
+                    .animation(
+                        .easeInOut(duration: 5)
+                        .repeatForever(autoreverses: true)
+                    )
+                    .onAppear {
+                        backgroundOffset = CGSize(width: 50, height: 50)
+                    }
+                    .blur(radius: 2)  // 轻微模糊效果
+                    .brightness(-0.1)  // 略微调暗
+                
                 // 动态渐变背景
                 LinearGradient(
                     gradient: Gradient(colors: colors),
