@@ -67,13 +67,19 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 静态的背景渐变
+                // 带有呼吸效果的背景渐变
                 LinearGradient(
                     gradient: Gradient(colors: colors),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: gradientStart,
+                    endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
+                .onAppear {
+                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
+                        gradientStart = UnitPoint(x: 1, y: 1)
+                        gradientEnd = UnitPoint(x: 0, y: 0)
+                    }
+                }
                 
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
