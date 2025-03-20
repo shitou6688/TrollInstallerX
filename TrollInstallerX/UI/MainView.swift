@@ -50,7 +50,7 @@ struct MainView: View {
                 ),
                 opacity: Double.random(in: 0.1...0.5),
                 scale: CGFloat.random(in: 0.5...1.5),
-                animationDuration: Double.random(in: 0.5...1.5)
+                animationDuration: Double.random(in: 1...3)
             )
         }
     }
@@ -60,9 +60,9 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x2196F3),
-        Color(hex: 0x1E88E5),
-        Color(hex: 0x1976D2)
+        Color(hex: 0x0482d1).opacity(0.8),
+        Color(hex: 0x0566ed).opacity(0.6),
+        Color(hex: 0x0450d1).opacity(0.7)
     ]
     
     var body: some View {
@@ -79,14 +79,14 @@ struct MainView: View {
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.white.opacity(0.7))  // 稍微降低星星的不透明度
                         .position(star.position)
                         .opacity(star.opacity)
                         .scaleEffect(star.scale)
                         .animation(
                             Animation.easeInOut(duration: star.animationDuration)
                                 .repeatForever(autoreverses: true)
-                                .delay(Double.random(in: 0...1)),
+                                .delay(Double.random(in: 0...2)),
                             value: star.opacity
                         )
                 }
@@ -118,11 +118,7 @@ struct MainView: View {
                         LogView(installationFinished: $installationFinished)
                             .frame(maxWidth: geometry.size.width - 40)
                             .frame(maxHeight: geometry.size.height / 2)
-                            .background(
-                                Color.white.opacity(0.1)
-                                    .cornerRadius(15)
-                                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-                            )
+                            .background(Color.white.opacity(0.1))
                             .cornerRadius(15)
                             .transition(.opacity)
                     }
