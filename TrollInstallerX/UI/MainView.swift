@@ -60,9 +60,9 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x20B2AA).opacity(0.8),  // 浅海蓝绿色
-        Color(hex: 0x2E8B57).opacity(0.6),  // 海洋绿色
-        Color(hex: 0x008080).opacity(0.7)   // 蓝绿色
+        Color(hex: 0x008B8B).opacity(0.8),  // 深青色
+        Color(hex: 0x00CED1).opacity(0.6),  // 深绿松石色
+        Color(hex: 0x20B2AA).opacity(0.7)   // 浅海蓝绿色
     ]
     
     var body: some View {
