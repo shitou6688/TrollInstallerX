@@ -60,9 +60,9 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0xE6F2FF).opacity(0.8),  // 浅蓝色，更加柔和
-        Color(hex: 0xB3D9FF).opacity(0.6),  // 更浅的蓝色
-        Color(hex: 0x99CCFF).opacity(0.7)   // 柔和的蓝色
+        Color(hex: 0x0482d1).opacity(0.8),
+        Color(hex: 0x0566ed).opacity(0.6),
+        Color(hex: 0x0450d1).opacity(0.7)
     ]
     
     var body: some View {
@@ -75,12 +75,12 @@ struct MainView: View {
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                .blur(radius: 10)  // 添加模糊效果增加虚化
+                .blur(radius: 10)  // 保留模糊效果
                 
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white.opacity(0.5))  // 降低星星不透明度
+                        .foregroundColor(.white.opacity(0.5))  // 保留星星的不透明度
                         .position(star.position)
                         .opacity(star.opacity)
                         .scaleEffect(star.scale)
