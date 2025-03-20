@@ -60,8 +60,9 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x87CEEB).opacity(0.8),   // 顶部浅蓝
-        Color(hex: 0x4169E1).opacity(0.7)    // 底部深蓝
+        Color(hex: 0x89CFF0).opacity(0.9),   // 更柔和的天蓝色
+        Color(hex: 0x5D9ECD).opacity(0.8),   // 中间调的蓝色
+        Color(hex: 0x4169E1).opacity(0.7)    // 深蓝色
     ]
     
     var body: some View {
@@ -75,15 +76,9 @@ struct MainView: View {
                 )
                 .ignoresSafeArea()
                 .onAppear {
-                    withAnimation(Animation.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
+                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
                         gradientStart = UnitPoint(x: 1, y: 1)
                         gradientEnd = UnitPoint(x: 0, y: 0)
-                    }
-                    
-                    // 添加轻微的缩放效果增强呼吸感
-                    withAnimation(Animation.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
-                        gradientStart = UnitPoint(x: 0.9, y: 0.9)
-                        gradientEnd = UnitPoint(x: 1.1, y: 1.1)
                     }
                 }
                 
