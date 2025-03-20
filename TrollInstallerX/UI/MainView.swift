@@ -60,27 +60,21 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0xFFC478).opacity(0.6),   // 温暖的日落橙
-        Color(hex: 0xFFAB73).opacity(0.7),   // 柔和的日出橙
-        Color(hex: 0xFF9A8B).opacity(0.5)    // 柔和的珊瑚色
+        Color(hex: 0x6FB2F9).opacity(0.8),   // 更浅的蓝色
+        Color(hex: 0x7BC1FF).opacity(0.6),   // 更亮的蓝色
+        Color(hex: 0x5AA0E6).opacity(0.7)    // 中间色调的蓝色
     ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 带有呼吸效果的背景渐变
+                // 静态的背景渐变
                 LinearGradient(
                     gradient: Gradient(colors: colors),
-                    startPoint: gradientStart,
-                    endPoint: gradientEnd
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                .onAppear {
-                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
-                        gradientStart = UnitPoint(x: 1, y: 1)
-                        gradientEnd = UnitPoint(x: 0, y: 0)
-                    }
-                }
                 
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
