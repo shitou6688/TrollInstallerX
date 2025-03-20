@@ -59,10 +59,9 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    // 背景颜色定义
     let colors = [
-        Color(hex: 0x008B8B).opacity(0.8),  // 深青色
-        Color(hex: 0x00CED1).opacity(0.6),  // 深绿松石色
-        Color(hex: 0x20B2AA).opacity(0.7)   // 浅海蓝绿色
+        Color(hex: 0x0482d1).opacity(0.8)
     ]
     
     var body: some View {
@@ -70,17 +69,16 @@ struct MainView: View {
             ZStack {
                 // 静态的背景渐变
                 LinearGradient(
-                    gradient: Gradient(colors: colors),
+                    gradient: Gradient(colors: [Color(hex: 0x0482d1)]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                .blur(radius: 10)  // 保留模糊效果
                 
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white.opacity(0.5))  // 保留星星的不透明度
+                        .foregroundColor(.white.opacity(0.7))  // 稍微降低星星的不透明度
                         .position(star.position)
                         .opacity(star.opacity)
                         .scaleEffect(star.scale)
