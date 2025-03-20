@@ -59,10 +59,11 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+    // 更现代和优雅的颜色混搭
     let colors = [
-        Color(hex: 0x0482d1).opacity(0.8),
-        Color(hex: 0x0566ed).opacity(0.6),
-        Color(hex: 0x0450d1).opacity(0.7)
+        Color(hex: 0x1E90FF).opacity(0.8),   // 道奇蓝，带有科技感
+        Color(hex: 0x4169E1).opacity(0.7),   // 皇家蓝，深沉而优雅
+        Color(hex: 0x0F2027).opacity(0.6)    // 深蓝灰，增加深度感
     ]
     
     var body: some View {
@@ -92,62 +93,69 @@ struct MainView: View {
                 }
                 
                 VStack {
-                    // 应用图标和标题
-                    Image("AppIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 100, height: 100)
-                        .cornerRadius(20)
-                    
-                    Text("巨魔安装器 X")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .padding(.bottom, 10)
-                    
-                    // 设备信息
-                    Text("\(device.modelIdentifier) - iOS \(device.version.readableString)")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(.bottom, 20)
-                    
-                    // 日志视图，根据是否安装调整高度
-                    LogView(installationFinished: $installationFinished)
-                        .frame(height: isInstalling ? geometry.size.height * 0.6 : 0)
-                        .opacity(isInstalling ? 1 : 0)
-                        .animation(.easeInOut, value: isInstalling)
-                    
-                    // 安装按钮，根据安装状态控制显示
-                    if !isInstalling {
-                        Button(action: {
-                            if !device.isSupported {
-                                Logger.log("您的设备版本不支持！", type: .error)
-                                return
-                            }
-                            
-                            if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert && !isInstalling {
-                                UIImpactFeedbackGenerator().impactOccurred()
-                                withAnimation {
-                                    isInstalling.toggle()
-                                }
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "arrow.right.circle")
-                                    .foregroundColor(.white)
-                                Text(device.isSupported ? "执行自动化安装程序" : "您的设备版本不支持")
-                                    .foregroundColor(.white)
-                            }
-                            .frame(maxWidth: geometry.size.width - 40)
-                            .frame(height: 50)
-                            .background(Color.white.opacity(0.2))
-                            .cornerRadius(10)
-                        }
-                        .disabled(!device.isSupported || isInstalling)
-                        .opacity(device.isSupported ? 1 : 0.5)
-                        .padding(.bottom, 50)
+                    // 顶部图标和标题固定显示
+                    VStack {
+                        Image("Icon")
+                            .resizable()
+                            .cornerRadius(22)
+                            .frame(maxWidth: 100, maxHeight: 100)
+                            .shadow(radius: 10)
+                        Text("巨魔安装器X")
+                            .font(.system(size: 30, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text("开发者：Alfie CG")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                        Text("iOS 14.0 - 16.6.1")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
                     }
+                    .padding(.top, 50)
+                    
+                    Spacer()
+                    
+                    // 安装状态显示（如果正在安装）
+                    if isInstalling {
+                        LogView(installationFinished: $installationFinished)
+                            .frame(maxWidth: geometry.size.width - 40)
+                            .frame(maxHeight: geometry.size.height / 2)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(15)
+                            .transition(.opacity)
+                    }
+                    
+                    Spacer()
+                    
+                    // 底部按钮始终显示
+                    Button(action: {
+                        if !device.isSupported {
+                            Logger.log("您的设备版本不支持！", type: .error)
+                            return
+                        }
+                        
+                        if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert && !isInstalling {
+                            UIImpactFeedbackGenerator().impactOccurred()
+                            withAnimation {
+                                isInstalling.toggle()
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.right.circle")
+                                .foregroundColor(.white)
+                            Text(device.isSupported ? "执行自动化安装程序" : "您的设备版本不支持")
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: geometry.size.width - 40)
+                        .frame(height: 50)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(10)
+                    }
+                    .disabled(!device.isSupported || isInstalling)
+                    .opacity(isInstalling ? 0.5 : 1)
+                    .padding(.bottom, 50)
                 }
-                .padding()
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
