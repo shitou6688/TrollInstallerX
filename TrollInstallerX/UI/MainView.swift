@@ -47,7 +47,7 @@ struct MainView: View {
             Star(
                 position: CGPoint(
                     x: CGFloat.random(in: 0...geometry.size.width),
-                    y: CGFloat.random(in: 0...geometry.size.height / 4)
+                    y: CGFloat.random(in: 0...geometry.size.height / 3)
                 ),
                 opacity: Double.random(in: 0.1...0.5),
                 scale: CGFloat.random(in: 0.5...1.5),
@@ -62,7 +62,7 @@ struct MainView: View {
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     // 背景颜色定义
     let colors = [
-        Color(hex: 0x0482d1).opacity(0.8)
+        Color(hex: 0x0466b3).opacity(0.8)
     ]
     
     var body: some View {
@@ -70,7 +70,7 @@ struct MainView: View {
             ZStack {
                 // 静态的背景渐变
                 LinearGradient(
-                    gradient: Gradient(colors: [Color(hex: 0x0482d1)]),
+                    gradient: Gradient(colors: [Color(hex: 0x0466b3)]),  // 略微深一点的蓝色
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -107,7 +107,7 @@ struct MainView: View {
                             .cornerRadius(22)
                             .frame(maxWidth: 100, maxHeight: 100)
                             .shadow(radius: 10)
-                        Text("巨魔安装器X")
+                        Text("巨魔安装器")
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
                         Text("开发者：Alfie CG")
