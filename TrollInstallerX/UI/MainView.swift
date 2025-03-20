@@ -75,9 +75,13 @@ struct MainView: View {
                 )
                 .ignoresSafeArea()
                 .onAppear {
-                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
-                        gradientStart = UnitPoint(x: 1, y: 1)
-                        gradientEnd = UnitPoint(x: 0, y: 0)
+                    withAnimation(
+                        Animation.easeInOut(duration: 10)  // 延长动画时间
+                            .repeatForever(autoreverses: true)
+                            .speed(0.2)  // 降低动画速度
+                    ) {
+                        gradientStart = UnitPoint(x: 0.8, y: 0.8)
+                        gradientEnd = UnitPoint(x: 0.2, y: 0.2)
                     }
                 }
                 
