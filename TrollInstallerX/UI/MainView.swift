@@ -24,11 +24,14 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
-    // 背景渐变动画状态
-    @State private var gradientStart = UnitPoint(x: 0, y: 0)
-    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
+    // 新的颜色主题
+    let gradientColors = [
+        Color(hex: 0x3A7CA5),   // 深蓝灰
+        Color(hex: 0x5C9EAD),   // 青色
+        Color(hex: 0x84B4C4)    // 浅蓝灰
+    ]
     
-    // 星星动画状态
+    // 星星动画
     @State private var stars: [Star] = []
     
     // 星星结构体
@@ -42,15 +45,15 @@ struct MainView: View {
     
     // 生成星星
     func generateStars(in geometry: GeometryProxy) -> [Star] {
-        return (0..<20).map { _ in
+        return (0..<30).map { _ in
             Star(
                 position: CGPoint(
                     x: CGFloat.random(in: 0...geometry.size.width),
-                    y: CGFloat.random(in: 0...geometry.size.height / 4)
+                    y: CGFloat.random(in: 0...geometry.size.height / 3)
                 ),
-                opacity: Double.random(in: 0.1...0.5),
-                scale: CGFloat.random(in: 0.5...1.5),
-                animationDuration: Double.random(in: 1...3)
+                opacity: Double.random(in: 0.2...0.6),
+                scale: CGFloat.random(in: 0.6...1.2),
+                animationDuration: Double.random(in: 1.5...3.5)
             )
         }
     }
@@ -60,32 +63,25 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x89CFF0).opacity(0.9),   // 更柔和的天蓝色
-        Color(hex: 0x5D9ECD).opacity(0.8),   // 中间调的蓝色
-        Color(hex: 0x4169E1).opacity(0.7)    // 深蓝色
+        Color(hex: 0x87CEEB).opacity(0.8),   // 顶部浅蓝
+        Color(hex: 0x4169E1).opacity(0.7)    // 底部深蓝
     ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 带有呼吸效果的背景渐变
+                // 渐变背景
                 LinearGradient(
-                    gradient: Gradient(colors: colors),
-                    startPoint: gradientStart,
-                    endPoint: gradientEnd
+                    gradient: Gradient(colors: gradientColors),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                .onAppear {
-                    withAnimation(Animation.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
-                        gradientStart = UnitPoint(x: 1, y: 1)
-                        gradientEnd = UnitPoint(x: 0, y: 0)
-                    }
-                }
                 
-                // 星星动画层
+                // 星星动画
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white.opacity(0.7))  // 稍微降低星星的不透明度
+                        .foregroundColor(.white.opacity(0.7))
                         .position(star.position)
                         .opacity(star.opacity)
                         .scaleEffect(star.scale)
@@ -97,41 +93,45 @@ struct MainView: View {
                         )
                 }
                 
-                VStack {
-                    // 顶部图标和标题固定显示
-                    VStack {
+                VStack(spacing: 20) {
+                    // 顶部应用信息
+                    VStack(alignment: .center, spacing: 10) {
                         Image("Icon")
                             .resizable()
-                            .cornerRadius(22)
-                            .frame(maxWidth: 100, maxHeight: 100)
-                            .shadow(radius: 10)
+                            .scaledToFit()
+                            .frame(width: 120, height: 120)
+                            .cornerRadius(25)
+                            .shadow(color: .black.opacity(0.2), radius: 15, x: 0, y: 10)
+                        
                         Text("巨魔安装器X")
-                            .font(.system(size: 30, weight: .semibold, design: .rounded))
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
+                        
                         Text("开发者：Alfie CG")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(.system(size: 18, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.7))
+                        
                         Text("iOS 14.0 - 16.6.1")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
                     }
                     .padding(.top, 50)
                     
                     Spacer()
                     
-                    // 安装状态显示（如果正在安装）
+                    // 安装日志
                     if isInstalling {
                         LogView(installationFinished: $installationFinished)
                             .frame(maxWidth: geometry.size.width - 40)
-                            .frame(maxHeight: geometry.size.height / 2)
+                            .frame(height: geometry.size.height / 2)
                             .background(Color.white.opacity(0.1))
                             .cornerRadius(15)
-                            .transition(.opacity)
+                            .transition(.asymmetric(insertion: .scale, removal: .opacity))
                     }
                     
                     Spacer()
                     
-                    // 底部按钮始终显示
+                    // 安装按钮
                     Button(action: {
                         if !device.isSupported {
                             Logger.log("您的设备版本不支持！", type: .error)
@@ -140,27 +140,39 @@ struct MainView: View {
                         
                         if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert && !isInstalling {
                             UIImpactFeedbackGenerator().impactOccurred()
-                            withAnimation {
+                            withAnimation(.spring()) {
                                 isInstalling.toggle()
                             }
                         }
                     }) {
                         HStack {
-                            Image(systemName: "arrow.right.circle")
+                            Image(systemName: "arrow.right.circle.fill")
                                 .foregroundColor(.white)
+                                .imageScale(.large)
                             Text(device.isSupported ? "执行自动化安装程序" : "您的设备版本不支持")
                                 .foregroundColor(.white)
+                                .fontWeight(.semibold)
                         }
                         .frame(maxWidth: geometry.size.width - 40)
-                        .frame(height: 50)
-                        .background(Color.white.opacity(0.2))
-                        .cornerRadius(10)
+                        .frame(height: 60)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.white.opacity(0.2),
+                                    Color.white.opacity(0.1)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .cornerRadius(15)
+                        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                     }
                     .disabled(!device.isSupported || isInstalling)
                     .opacity(isInstalling ? 0.5 : 1)
                     .padding(.bottom, 50)
                 }
-                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits) ? 10 : 0)
                 
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
