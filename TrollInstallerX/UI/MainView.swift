@@ -24,8 +24,9 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
-    // 背景颜色定义
-    let backgroundColor = Color(hex: 0x0450d1).opacity(0.7)
+    // 背景渐变动画状态
+    @State private var gradientStart = UnitPoint(x: 0, y: 0)
+    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
     
     // 星星动画状态
     @State private var stars: [Star] = []
@@ -59,16 +60,20 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x0482d1).opacity(0.8),
-        Color(hex: 0x0566ed).opacity(0.6),
-        Color(hex: 0x0450d1).opacity(0.7)
+        Color(hex: 0x0482d1).opacity(0.5),   // 降低不透明度
+        Color(hex: 0x0566ed).opacity(0.4),   // 进一步降低不透明度
+        Color(hex: 0x0450d1).opacity(0.5)    // 保持一致的不透明度
     ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 使用纯色背景
-                backgroundColor
+                // 静态的背景渐变
+                LinearGradient(
+                    gradient: Gradient(colors: colors),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
                 .ignoresSafeArea()
                 
                 // 星星动画层
