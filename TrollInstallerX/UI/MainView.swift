@@ -59,11 +59,10 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    // 更现代和优雅的颜色混搭
     let colors = [
-        Color(hex: 0x1E90FF).opacity(0.8),   // 道奇蓝，带有科技感
-        Color(hex: 0x4169E1).opacity(0.7),   // 皇家蓝，深沉而优雅
-        Color(hex: 0x0F2027).opacity(0.6)    // 深蓝灰，增加深度感
+        Color(hex: 0x0482d1).opacity(0.6),   // 降低不透明度
+        Color(hex: 0x0566ed).opacity(0.5),   // 进一步降低不透明度
+        Color(hex: 0x0450d1).opacity(0.55)   // 调整为更浅的颜色
     ]
     
     var body: some View {
