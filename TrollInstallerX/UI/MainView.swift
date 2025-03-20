@@ -24,14 +24,8 @@ struct MainView: View {
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
-    // 新的颜色主题
-    let gradientColors = [
-        Color(hex: 0x3A7CA5),   // 深蓝灰
-        Color(hex: 0x5C9EAD),   // 青色
-        Color(hex: 0x84B4C4)    // 浅蓝灰
-    ]
-    
-    // 星星动画
+    // 渐变和动画状态
+    @State private var gradientAnimation = 0.0
     @State private var stars: [Star] = []
     
     // 星星结构体
@@ -43,7 +37,14 @@ struct MainView: View {
         var animationDuration: Double
     }
     
-    // 生成星星
+    // 更精美的颜色渐变
+    let colors = [
+        Color(hex: 0x3A7CA5),   // 深蓝灰
+        Color(hex: 0x5C9EAD),   // 柔和蓝绿
+        Color(hex: 0x7EBDC2)    // 浅蓝绿
+    ]
+    
+    // 生成更精致的星星
     func generateStars(in geometry: GeometryProxy) -> [Star] {
         return (0..<30).map { _ in
             Star(
@@ -62,23 +63,25 @@ struct MainView: View {
     @ObservedObject var helperView = HelperAlert.shared
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
-    let colors = [
-        Color(hex: 0x87CEEB).opacity(0.8),   // 顶部浅蓝
-        Color(hex: 0x4169E1).opacity(0.7)    // 底部深蓝
-    ]
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 渐变背景
+                // 更加动态和柔和的背景渐变
                 LinearGradient(
-                    gradient: Gradient(colors: gradientColors),
+                    gradient: Gradient(colors: colors),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
+                .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: gradientAnimation)
+                .onAppear {
+                    withAnimation {
+                        gradientAnimation = 1.0
+                    }
+                }
                 
-                // 星星动画
+                // 星星动画层，更加精致
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
                         .foregroundColor(.white.opacity(0.7))
@@ -94,17 +97,17 @@ struct MainView: View {
                 }
                 
                 VStack(spacing: 20) {
-                    // 顶部应用信息
-                    VStack(alignment: .center, spacing: 10) {
+                    // 顶部应用信息，更加精致
+                    VStack(spacing: 10) {
                         Image("Icon")
                             .resizable()
-                            .scaledToFit()
+                            .aspectRatio(contentMode: .fit)
                             .frame(width: 120, height: 120)
                             .cornerRadius(25)
                             .shadow(color: .black.opacity(0.2), radius: 15, x: 0, y: 10)
                         
                         Text("巨魔安装器X")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .font(.system(size: 34, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         
                         Text("开发者：Alfie CG")
@@ -119,19 +122,21 @@ struct MainView: View {
                     
                     Spacer()
                     
-                    // 安装日志
+                    // 安装日志，更加现代和清晰
                     if isInstalling {
                         LogView(installationFinished: $installationFinished)
                             .frame(maxWidth: geometry.size.width - 40)
-                            .frame(height: geometry.size.height / 2)
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(15)
+                            .frame(maxHeight: geometry.size.height / 2)
+                            .background(
+                                BlurView(style: .systemUltraThinMaterialDark)
+                                    .cornerRadius(15)
+                            )
                             .transition(.asymmetric(insertion: .scale, removal: .opacity))
                     }
                     
                     Spacer()
                     
-                    // 安装按钮
+                    // 安装按钮，更加现代和有质感
                     Button(action: {
                         if !device.isSupported {
                             Logger.log("您的设备版本不支持！", type: .error)
@@ -150,23 +155,23 @@ struct MainView: View {
                                 .foregroundColor(.white)
                                 .imageScale(.large)
                             Text(device.isSupported ? "执行自动化安装程序" : "您的设备版本不支持")
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
-                                .fontWeight(.semibold)
                         }
                         .frame(maxWidth: geometry.size.width - 40)
                         .frame(height: 60)
                         .background(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.white.opacity(0.2),
-                                    Color.white.opacity(0.1)
+                                    Color(hex: 0x5C9EAD).opacity(0.8),
+                                    Color(hex: 0x3A7CA5).opacity(0.9)
                                 ]),
-                                startPoint: .top,
-                                endPoint: .bottom
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
                             )
                         )
                         .cornerRadius(15)
-                        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
                     }
                     .disabled(!device.isSupported || isInstalling)
                     .opacity(isInstalling ? 0.5 : 1)
@@ -244,4 +249,16 @@ struct MainView_Previews: PreviewProvider {
     static var previews: some View {
         MainView()
     }
+}
+
+// 添加模糊视图
+struct BlurView: UIViewRepresentable {
+    let style: UIBlurEffect.Style
+    
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        let view = UIVisualEffectView(effect: UIBlurEffect(style: style))
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
 }
