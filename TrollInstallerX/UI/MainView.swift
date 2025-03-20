@@ -25,7 +25,8 @@ struct MainView: View {
     @State private var installationFinished = false
     
     // 背景渐变动画状态
-    @State private var gradientOffset = CGPoint(x: 0, y: 0)
+    @State private var gradientStart = UnitPoint(x: 0, y: 0)
+    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
     
     // 星星动画状态
     @State private var stars: [Star] = []
@@ -66,26 +67,30 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // 带有流动效果的背景渐变
+                // 带有呼吸效果的背景渐变
                 LinearGradient(
                     gradient: Gradient(colors: colors),
-                    startPoint: .init(x: 0.5 + gradientOffset.x, y: 0.5 + gradientOffset.y),
-                    endPoint: .init(x: 0.5 - gradientOffset.x, y: 0.5 - gradientOffset.y)
+                    startPoint: gradientStart,
+                    endPoint: gradientEnd
                 )
                 .ignoresSafeArea()
                 .onAppear {
-                    withAnimation(
-                        Animation.easeInOut(duration: 8)
-                            .repeatForever(autoreverses: true)
-                    ) {
-                        gradientOffset = CGPoint(x: 0.2, y: 0.2)
+                    withAnimation(Animation.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
+                        gradientStart = UnitPoint(x: 1, y: 1)
+                        gradientEnd = UnitPoint(x: 0, y: 0)
+                    }
+                    
+                    // 添加轻微的缩放效果增强呼吸感
+                    withAnimation(Animation.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
+                        gradientStart = UnitPoint(x: 0.9, y: 0.9)
+                        gradientEnd = UnitPoint(x: 1.1, y: 1.1)
                     }
                 }
                 
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.white.opacity(0.7))  // 稍微降低星星的不透明度
                         .position(star.position)
                         .opacity(star.opacity)
                         .scaleEffect(star.scale)
