@@ -48,9 +48,9 @@ struct MainView: View {
                     x: CGFloat.random(in: 0...geometry.size.width),
                     y: CGFloat.random(in: 0...geometry.size.height / 4)
                 ),
-                opacity: Double.random(in: 0.3...0.6),
-                scale: CGFloat.random(in: 0.8...1.2),
-                animationDuration: Double.random(in: 3...5)
+                opacity: Double.random(in: 0.1...0.5),
+                scale: CGFloat.random(in: 0.5...1.5),
+                animationDuration: Double.random(in: 0.5...1.5)
             )
         }
     }
@@ -60,9 +60,9 @@ struct MainView: View {
     
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     let colors = [
-        Color(hex: 0x6BAEFF),  // 更浅的蓝色
-        Color(hex: 0x7CB5FF),  // 稍微浅一点的蓝色
-        Color(hex: 0x5A9EFF)   // 最浅的蓝色
+        Color(hex: 0x2196F3),
+        Color(hex: 0x1E88E5),
+        Color(hex: 0x1976D2)
     ]
     
     var body: some View {
@@ -86,7 +86,7 @@ struct MainView: View {
                         .animation(
                             Animation.easeInOut(duration: star.animationDuration)
                                 .repeatForever(autoreverses: true)
-                                .delay(Double.random(in: 0...2)),
+                                .delay(Double.random(in: 0...1)),
                             value: star.opacity
                         )
                 }
