@@ -39,13 +39,13 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        Logger.log("正在下载内核中，请您耐心稍等...", type: .info)
+        Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
+        // 持续下载，不重试，不报错
         while true {
             if grab_kernelcache(kernelPath) {
                 return true
             }
-            sleep(1)  // 1秒后重试
         }
     }
     
