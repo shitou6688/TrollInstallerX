@@ -19,10 +19,13 @@ func checkForMDCUnsandbox() -> Bool {
 
 func getKernel(_ device: Device) -> Bool {
     if !fileManager.fileExists(atPath: kernelPath) {
+        // 首先尝试本地缓存
         if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
             try? fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
             if fileManager.fileExists(atPath: kernelPath) { return true }
         }
+        
+        // MacDirtyCow 方法
         if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
             let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
             if fd > 0 {
@@ -39,13 +42,14 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        Logger.log("正在下载内核中，请您耐心稍等...", type: .info)
+        // 使用 libgrabkernel2 下载
+        Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
-        while true {
-            if grab_kernelcache(kernelPath) {
-                return true
-            }
-            sleep(1)  // 1秒后重试
+        // 使用 libgrabkernel2 的新下载方法
+        let grabResult = grab_kernelcache_v2(kernelPath)
+        
+        if grabResult {
+            return true
         }
     }
     

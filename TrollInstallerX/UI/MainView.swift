@@ -49,9 +49,9 @@ struct MainView: View {
                     x: CGFloat.random(in: 0...geometry.size.width),
                     y: CGFloat.random(in: 0...geometry.size.height / 3)
                 ),
-                opacity: Double.random(in: 0.1...0.3),  // 降低最大不透明度
-                scale: CGFloat.random(in: 0.3...1.0),   // 缩小最大缩放
-                animationDuration: Double.random(in: 3...6)  // 保持动画持续时间
+                opacity: Double.random(in: 0.1...0.5),
+                scale: CGFloat.random(in: 0.5...1.5),
+                animationDuration: Double.random(in: 3...6)  // 增加动画持续时间
             )
         }
     }
@@ -62,7 +62,7 @@ struct MainView: View {
     let timer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
     // 背景颜色定义
     let colors = [
-        Color(hex: 0x0482d1).opacity(0.8)
+        Color(hex: 0x0466b3).opacity(0.8)
     ]
     
     var body: some View {
@@ -70,7 +70,7 @@ struct MainView: View {
             ZStack {
                 // 静态的背景渐变
                 LinearGradient(
-                    gradient: Gradient(colors: [Color(hex: 0x0482d1)]),  // 使用更浅的蓝色
+                    gradient: Gradient(colors: [Color(hex: 0x0466b3)]),  // 略微深一点的蓝色
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -79,7 +79,7 @@ struct MainView: View {
                 // 星星动画层
                 ForEach(stars.isEmpty ? generateStars(in: geometry) : stars) { star in
                     Image(systemName: "star.fill")
-                        .foregroundColor(.white.opacity(0.4))  // 降低不透明度
+                        .foregroundColor(.white.opacity(0.7))
                         .position(
                             x: star.position.x + star.movementOffset,
                             y: star.position.y
