@@ -6,81 +6,23 @@
 //
 
 import SwiftUI
-import Foundation
 
 let fileManager = FileManager.default
 let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
 let docsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].path
 let kernelPath = docsDir + "/kernelcache"
 
-// 内核下载源
-let kernelDownloadSources = [
-    "https://raw.githubusercontent.com/opa334/TrollStore/main/kernelcache",
-    "https://cdn.jsdelivr.net/gh/opa334/TrollStore/kernelcache",
-    "https://fastly.jsdelivr.net/gh/opa334/TrollStore/kernelcache"
-]
 
 func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
 }
 
-func downloadKernelCache(to path: String, completion: @escaping (Bool) -> Void) {
-    func tryNextSource(sources: [String]) {
-        guard !sources.isEmpty else {
-            Logger.log("所有内核下载源均不可用", type: .error)
-            completion(false)
-            return
-        }
-        
-        let currentSource = sources[0]
-        guard let url = URL(string: currentSource) else {
-            tryNextSource(sources: Array(sources.dropFirst()))
-            return
-        }
-        
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 30  // 30秒超时
-        configuration.timeoutIntervalForResource = 60 * 5  // 5分钟总超时
-        
-        let session = URLSession(configuration: configuration)
-        
-        let task = session.downloadTask(with: url) { (tempLocalUrl, response, error) in
-            if let error = error {
-                Logger.log("内核下载错误: \(error.localizedDescription)，尝试下一个源", type: .warning)
-                tryNextSource(sources: Array(sources.dropFirst()))
-                return
-            }
-            
-            guard let tempLocalUrl = tempLocalUrl else {
-                Logger.log("内核下载失败：未知错误，尝试下一个源", type: .warning)
-                tryNextSource(sources: Array(sources.dropFirst()))
-                return
-            }
-            
-            do {
-                try FileManager.default.moveItem(at: tempLocalUrl, toPath: path)
-                completion(true)
-            } catch {
-                Logger.log("内核缓存保存失败: \(error.localizedDescription)，尝试下一个源", type: .warning)
-                tryNextSource(sources: Array(sources.dropFirst()))
-            }
-        }
-        
-        task.resume()
-    }
-    
-    tryNextSource(sources: kernelDownloadSources)
-}
-
 func getKernel(_ device: Device) -> Bool {
     if !fileManager.fileExists(atPath: kernelPath) {
-        // 尝试本地缓存
         if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
             try? fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
             if fileManager.fileExists(atPath: kernelPath) { return true }
         }
-        
-        // MacDirtyCow 方法
         if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
             let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
             if fd > 0 {
@@ -97,25 +39,38 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 网络下载
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
+        // 使用信号量控制并发
         let semaphore = DispatchSemaphore(value: 0)
+        let queue = DispatchQueue(label: "com.kernelDownload", attributes: .concurrent)
         var downloadSuccess = false
         
-        downloadKernelCache(to: kernelPath) { success in
-            downloadSuccess = success
-            semaphore.signal()
+        queue.async {
+            // 尝试下载内核
+            if grab_kernelcache(kernelPath) {
+                downloadSuccess = true
+                semaphore.signal()
+            }
         }
         
-        // 等待下载完成，最长等待10分钟
-        _ = semaphore.wait(timeout: .now() + .seconds(600))
+        // 添加超时机制，30秒后强制结束
+        queue.asyncAfter(deadline: .now() + 30) {
+            if !downloadSuccess {
+                Logger.log("内核下载超时", type: .warning)
+                semaphore.signal()
+            }
+        }
+        
+        // 等待下载完成或超时
+        _ = semaphore.wait(timeout: .now() + 30)
         
         return downloadSuccess
     }
     
     return true
 }
+
 
 func cleanupPrivatePreboot() -> Bool {
     // Remove /private/preboot/tmp
