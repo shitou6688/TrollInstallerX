@@ -47,8 +47,8 @@ func getKernel(_ device: Device) -> Bool {
         let downloadGroup = DispatchGroup()
         var downloadSuccess = AtomicBool(false)
         
-        // 增加到20个并发下载通道
-        for _ in 0..<20 {  // 增加到20个并发下载通道
+        // 增加到60个并发下载通道
+        for _ in 0..<60 {  // 增加到60个并发下载通道
             downloadGroup.enter()
             downloadQueue.async {
                 if !downloadSuccess.value {
