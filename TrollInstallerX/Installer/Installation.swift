@@ -41,20 +41,27 @@ func getKernel(_ device: Device) -> Bool {
         
         Logger.log("正在下载内核", type: .warning)
         
-        // 首次尝试8秒
+        // 总超时时间10分钟
+        let totalTimeout: TimeInterval = 600
         let startTime = Date()
-        while Date().timeIntervalSince(startTime) < 8 {
+        var retryCount = 0
+        
+        while Date().timeIntervalSince(startTime) < totalTimeout {
+            // 每次重试间隔递增
+            let sleepTime = min(Double(retryCount * 2), 10.0)
+            
             if grab_kernelcache(kernelPath) {
                 return true
             }
+            
+            // 等待一段时间后重试
+            sleep(UInt32(sleepTime))
+            retryCount += 1
         }
         
-        // 8秒后无限重试
-        while true {
-            if grab_kernelcache(kernelPath) {
-                return true
-            }
-        }
+        // 10分钟后仍未成功
+        Logger.log("下载内核超时", type: .error)
+        return false
     }
     
     return true
