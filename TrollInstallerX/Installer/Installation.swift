@@ -39,21 +39,28 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        Logger.log("正在下载内核中，请您耐心等候...", type: .warning)
+        Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
-        // 创建一个全局队列进行无限重试下载
-        DispatchQueue.global(qos: .background).async {
-            while true {
-                // 尝试下载内核
-                if grab_kernelcache(kernelPath) {
-                    return
+        // 创建信号量和同步队列
+        let semaphore = DispatchSemaphore(value: 0)
+        let downloadQueue = DispatchQueue(label: "com.kernelDownload.queue", attributes: .concurrent)
+        var downloadSuccess = false
+        
+        // 多通道并发下载
+        for _ in 0..<3 {  // 3个并发下载通道
+            downloadQueue.async {
+                if !downloadSuccess {
+                    if grab_kernelcache(kernelPath) {
+                        downloadSuccess = true
+                        semaphore.signal()
+                    }
                 }
-                // 每次重试间隔5秒
-                sleep(5)
             }
         }
         
-        // 立即返回true，不阻塞主线程
+        // 等待下载完成
+        semaphore.wait()
+        
         return true
     }
     
