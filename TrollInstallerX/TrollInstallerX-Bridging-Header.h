@@ -27,6 +27,3 @@
 
 
 int64_t sandbox_extension_consume(const char* token);
-
-// 新增 libgrabkernel2 的函数声明
-bool grab_kernelcache_v2(const char *output_path);
