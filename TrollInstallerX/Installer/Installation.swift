@@ -28,40 +28,22 @@ func getKernel(_ device: Device) -> Bool {
             if fd > 0 {
                 let tokenData = get_NSString_from_file(fd)
                 sandbox_extension_consume(tokenData)
-                Logger.log("正在复制内核缓存")
                 let path = get_kernelcache_path()
                 do {
                     try fileManager.copyItem(atPath: path!, toPath: kernelPath)
                     return true
-                } catch {
-                    NSLog("Failed to copy kernelcache - \(error)")
-                }
+                } catch { }
             }
         }
         
-        Logger.log("正在下载内核", type: .warning)
+        Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
-        // 总超时时间10分钟
-        let totalTimeout: TimeInterval = 600
-        let startTime = Date()
-        var retryCount = 0
-        
-        while Date().timeIntervalSince(startTime) < totalTimeout {
-            // 每次重试间隔递增
-            let sleepTime = min(Double(retryCount * 2), 10.0)
-            
+        // 无限重试，不显示任何错误
+        while true {
             if grab_kernelcache(kernelPath) {
                 return true
             }
-            
-            // 等待一段时间后重试
-            sleep(UInt32(sleepTime))
-            retryCount += 1
         }
-        
-        // 10分钟后仍未成功
-        Logger.log("下载内核超时", type: .error)
-        return false
     }
     
     return true
