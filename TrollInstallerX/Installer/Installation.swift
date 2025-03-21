@@ -109,7 +109,7 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         // 等待下载完成，最长等待10分钟
-        _ = semaphore.wait(timeout: .now() + .minutes(10))
+        _ = semaphore.wait(timeout: .now() + .seconds(600))
         
         return downloadSuccess
     }

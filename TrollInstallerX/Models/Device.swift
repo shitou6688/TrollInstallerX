@@ -96,7 +96,9 @@ struct Device {
         let registryEntry = IORegistryEntryFromPath(mach_port_t(MACH_PORT_NULL), "IODeviceTree:/chosen")
         if let bmHash = IORegistryEntryCreateCFProperty(registryEntry, "chip-id" as CFString, kCFAllocatorDefault, 0) {
             if let bootManifestHashData = bmHash.takeRetainedValue() as? Data {
-                let cpid: Int = bootManifestHashData.withUnsafeBytes { $0.pointee }
+                let cpid: Int = bootManifestHashData.withUnsafeBytes { buffer in
+                    buffer.baseAddress?.assumingMemoryBound(to: Int.self).pointee ?? 0
+                }
                 isM2 = cpid == 0x8112
             }
         }
