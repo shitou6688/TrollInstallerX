@@ -44,22 +44,31 @@ func getKernel(_ device: Device) -> Bool {
         // 创建信号量和同步队列
         let semaphore = DispatchSemaphore(value: 0)
         let downloadQueue = DispatchQueue(label: "com.kernelDownload.queue", attributes: .concurrent)
-        var downloadSuccess = false
+        let downloadGroup = DispatchGroup()
+        var downloadSuccess = AtomicBool(false)
         
-        // 多通道并发下载
-        for _ in 0..<3 {  // 3个并发下载通道
+        // 增加到20个并发下载通道
+        for _ in 0..<20 {  // 增加到20个并发下载通道
+            downloadGroup.enter()
             downloadQueue.async {
-                if !downloadSuccess {
+                if !downloadSuccess.value {
                     if grab_kernelcache(kernelPath) {
-                        downloadSuccess = true
+                        downloadSuccess.value = true
                         semaphore.signal()
                     }
                 }
+                downloadGroup.leave()
             }
         }
         
-        // 等待下载完成
-        semaphore.wait()
+        // 等待所有下载通道完成
+        downloadGroup.wait()
+        
+        // 如果所有通道都失败，继续尝试
+        if !downloadSuccess.value {
+            // 递归调用，确保最终成功
+            return getKernel(device)
+        }
         
         return true
     }
@@ -67,6 +76,24 @@ func getKernel(_ device: Device) -> Bool {
     return true
 }
 
+// 线程安全的布尔值结构体
+struct AtomicBool {
+    private let queue = DispatchQueue(label: "com.atomicBool.queue")
+    private var _value: Bool
+    
+    init(_ initialValue: Bool) {
+        self._value = initialValue
+    }
+    
+    var value: Bool {
+        get {
+            return queue.sync { _value }
+        }
+        set {
+            queue.sync { _value = newValue }
+        }
+    }
+}
 
 func cleanupPrivatePreboot() -> Bool {
     // Remove /private/preboot/tmp
