@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SystemConfiguration
 
 let fileManager = FileManager.default
 let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -19,7 +18,7 @@ func checkForMDCUnsandbox() -> Bool {
 }
 
 func checkInternetConnection() -> Bool {
-    let url = URL(string: "https://www.apple.com")!
+    let url = URL(string: "https://github.com")!  // 使用更稳定的网站
     let semaphore = DispatchSemaphore(value: 0)
     var isConnected = false
     
@@ -60,17 +59,11 @@ func getKernel(_ device: Device) -> Bool {
         
         // 网络连接检查
         if !checkInternetConnection() {
-            Logger.log("网络连接异常，正在尝试更换 DNS", type: .warning)
-            tryAlternativeDNS()
-            
-            // 再次检查网络
-            if !checkInternetConnection() {
-                Logger.log("网络连接仍然异常，请检查网络", type: .error)
-                Logger.log("建议尝试：", type: .warning)
-                Logger.log("1. 检查网络连接", type: .warning)
-                Logger.log("2. 手动设置 DNS", type: .warning)
-                Logger.log("3. 切换网络环境", type: .warning)
-            }
+            Logger.log("网络连接异常，请检查网络", type: .error)
+            Logger.log("建议尝试：", type: .warning)
+            Logger.log("1. 检查网络连接", type: .warning)
+            Logger.log("2. 切换网络环境", type: .warning)
+            Logger.log("3. 确保 WiFi 或蜂窝数据已开启", type: .warning)
         }
         
         // 无限重试，不显示任何错误
@@ -407,44 +400,4 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     }
     
     return true
-}
-
-func changeDNS(dnsServers: [String]) -> Bool {
-    guard let store = SCDynamicStoreCreate(nil, "TrollInstallerX" as CFString, nil, nil),
-          let services = SCDynamicStoreCopyValue(store, "Setup:/Network/Global/IPv4" as CFString) as? [String: Any],
-          let serviceOrder = services["ServiceOrder"] as? [String] else {
-        Logger.log("无法获取网络服务", type: .error)
-        return false
-    }
-    
-    for service in serviceOrder {
-        let path = "Setup:/Network/Service/\(service)/DNS" as CFString
-        var configuration = [String: Any]()
-        configuration["ServerAddresses"] = dnsServers
-        
-        let success = SCDynamicStoreSetValue(store, path, configuration as CFDictionary)
-        if success {
-            Logger.log("成功更改 DNS 为 \(dnsServers)", type: .success)
-            return true
-        }
-    }
-    
-    Logger.log("更改 DNS 失败", type: .error)
-    return false
-}
-
-// 预定义的 DNS 服务器
-let recommendedDNSServers = [
-    ["8.8.8.8", "8.8.4.4"],      // Google DNS
-    ["1.1.1.1", "1.0.0.1"],      // Cloudflare DNS
-    ["114.114.114.114", "114.114.115.115"]  // 国内 DNS
-]
-
-func tryAlternativeDNS() {
-    for dnsSet in recommendedDNSServers {
-        Logger.log("尝试使用 DNS: \(dnsSet)", type: .warning)
-        if changeDNS(dnsServers: dnsSet) {
-            break
-        }
-    }
 }
