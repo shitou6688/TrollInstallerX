@@ -69,47 +69,41 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
+        // 只显示一次下载提示
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
-        // 创建信号量和同步队列
-        let semaphore = DispatchSemaphore(value: 0)
-        let downloadQueue = DispatchQueue(label: "com.kernelDownload.queue", attributes: .concurrent)
-        let downloadGroup = DispatchGroup()
-        var downloadSuccess = AtomicBool(false)
-        var networkResetCount = AtomicInteger(0)
-        
-        // 增加到60个并发下载通道
-        for _ in 0..<60 {  // 增加到60个并发下载通道
-            downloadGroup.enter()
-            downloadQueue.async {
-                if !downloadSuccess.value {
-                    // 检查网络连接
-                    if !isNetworkAvailable() {
-                        if networkResetCount.value < 3 {  // 限制网络重置次数
-                            resetNetworkConnection()
-                            networkResetCount.increment()
+        while true {
+            // 创建信号量和同步队列
+            let semaphore = DispatchSemaphore(value: 0)
+            let downloadQueue = DispatchQueue(label: "com.kernelDownload.queue", attributes: .concurrent)
+            let downloadGroup = DispatchGroup()
+            var downloadSuccess = AtomicBool(false)
+            
+            // 增加到60个并发下载通道
+            for _ in 0..<60 {
+                downloadGroup.enter()
+                downloadQueue.async {
+                    if !downloadSuccess.value {
+                        if grab_kernelcache(kernelPath) {
+                            downloadSuccess.value = true
+                            semaphore.signal()
                         }
                     }
-                    
-                    if grab_kernelcache(kernelPath) {
-                        downloadSuccess.value = true
-                        semaphore.signal()
-                    }
+                    downloadGroup.leave()
                 }
-                downloadGroup.leave()
             }
+            
+            // 等待所有下载通道完成
+            downloadGroup.wait()
+            
+            // 如果下载成功，立即返回
+            if downloadSuccess.value {
+                return true
+            }
+            
+            // 如果下载失败，等待1秒后继续重试
+            sleep(1)
         }
-        
-        // 等待所有下载通道完成
-        downloadGroup.wait()
-        
-        // 如果所有通道都失败，继续尝试
-        if !downloadSuccess.value {
-            // 递归调用，确保最终成功
-            return getKernel(device)
-        }
-        
-        return true
     }
     
     return true
