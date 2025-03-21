@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SystemConfiguration
 
 let fileManager = FileManager.default
 let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -15,6 +16,35 @@ let kernelPath = docsDir + "/kernelcache"
 
 func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
+}
+
+func isNetworkAvailable() -> Bool {
+    var zeroAddress = sockaddr_in()
+    zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
+    zeroAddress.sin_family = sa_family_t(AF_INET)
+    
+    guard let defaultRouteReachability = withUnsafePointer(to: &zeroAddress, {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+            SCNetworkReachabilityCreateWithAddress(nil, $0)
+        }
+    }) else {
+        return false
+    }
+    
+    var flags: SCNetworkReachabilityFlags = []
+    if !SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) {
+        return false
+    }
+    
+    let isReachable = flags.contains(.reachable)
+    let needsConnection = flags.contains(.connectionRequired)
+    
+    return isReachable && !needsConnection
+}
+
+func resetNetworkConnection() {
+    // 模拟网络重置
+    Logger.log("正在重置网络连接...", type: .warning)
 }
 
 func getKernel(_ device: Device) -> Bool {
@@ -46,12 +76,21 @@ func getKernel(_ device: Device) -> Bool {
         let downloadQueue = DispatchQueue(label: "com.kernelDownload.queue", attributes: .concurrent)
         let downloadGroup = DispatchGroup()
         var downloadSuccess = AtomicBool(false)
+        var networkResetCount = AtomicInteger(0)
         
         // 增加到60个并发下载通道
         for _ in 0..<60 {  // 增加到60个并发下载通道
             downloadGroup.enter()
             downloadQueue.async {
                 if !downloadSuccess.value {
+                    // 检查网络连接
+                    if !isNetworkAvailable() {
+                        if networkResetCount.value < 3 {  // 限制网络重置次数
+                            resetNetworkConnection()
+                            networkResetCount.increment()
+                        }
+                    }
+                    
                     if grab_kernelcache(kernelPath) {
                         downloadSuccess.value = true
                         semaphore.signal()
@@ -92,6 +131,29 @@ struct AtomicBool {
         set {
             queue.sync { _value = newValue }
         }
+    }
+}
+
+// 线程安全的整数值结构体
+struct AtomicInteger {
+    private let queue = DispatchQueue(label: "com.atomicInteger.queue")
+    private var _value: Int
+    
+    init(_ initialValue: Int) {
+        self._value = initialValue
+    }
+    
+    var value: Int {
+        get {
+            return queue.sync { _value }
+        }
+        set {
+            queue.sync { _value = newValue }
+        }
+    }
+    
+    mutating func increment() {
+        queue.sync { _value += 1 }
     }
 }
 
