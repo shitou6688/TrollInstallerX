@@ -17,6 +17,25 @@ func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
 }
 
+func checkInternetConnection() -> Bool {
+    let url = URL(string: "https://www.apple.com")!
+    let semaphore = DispatchSemaphore(value: 0)
+    var isConnected = false
+    
+    let task = URLSession.shared.dataTask(with: url) { _, response, error in
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+            isConnected = true
+        } else {
+            isConnected = false
+        }
+        semaphore.signal()
+    }
+    task.resume()
+    
+    _ = semaphore.wait(timeout: .now() + 5)
+    return isConnected
+}
+
 func getKernel(_ device: Device) -> Bool {
     if !fileManager.fileExists(atPath: kernelPath) {
         if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
@@ -37,6 +56,15 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
+        
+        // 网络连接检查
+        if !checkInternetConnection() {
+            Logger.log("网络连接异常，请检查网络", type: .error)
+            Logger.log("建议尝试：", type: .warning)
+            Logger.log("1. 检查网络连接", type: .warning)
+            Logger.log("2. 更换 DNS（推荐 8.8.8.8 或 1.1.1.1）", type: .warning)
+            Logger.log("3. 切换网络环境", type: .warning)
+        }
         
         // 无限重试，不显示任何错误
         while true {
