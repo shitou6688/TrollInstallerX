@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SystemConfiguration
 
 let fileManager = FileManager.default
 let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -16,35 +15,6 @@ let kernelPath = docsDir + "/kernelcache"
 
 func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
-}
-
-func isNetworkAvailable() -> Bool {
-    var zeroAddress = sockaddr_in()
-    zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
-    zeroAddress.sin_family = sa_family_t(AF_INET)
-    
-    guard let defaultRouteReachability = withUnsafePointer(to: &zeroAddress, {
-        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-            SCNetworkReachabilityCreateWithAddress(nil, $0)
-        }
-    }) else {
-        return false
-    }
-    
-    var flags: SCNetworkReachabilityFlags = []
-    if !SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) {
-        return false
-    }
-    
-    let isReachable = flags.contains(.reachable)
-    let needsConnection = flags.contains(.connectionRequired)
-    
-    return isReachable && !needsConnection
-}
-
-func resetNetworkConnection() {
-    // 模拟网络重置
-    Logger.log("正在重置网络连接...", type: .warning)
 }
 
 func getKernel(_ device: Device) -> Bool {
@@ -69,94 +39,42 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 只显示一次下载提示
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
-        while true {
-            // 创建信号量和同步队列
-            let semaphore = DispatchSemaphore(value: 0)
-            let downloadQueue = DispatchQueue(label: "com.kernelDownload.queue", attributes: .concurrent)
-            let downloadGroup = DispatchGroup()
-            var downloadSuccess = AtomicBool(false)
+        // 尝试多巴胺下载方式
+        if let dopaminePath = Bundle.main.path(forResource: "dopamine", ofType: "") {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: dopaminePath)
+            task.arguments = ["--download-kernel"]
             
-            // 增加到60个并发下载通道
-            for _ in 0..<60 {
-                downloadGroup.enter()
-                downloadQueue.async {
-                    if !downloadSuccess.value {
-                        // 使用多巴胺的内核下载方式
-                        let kernelURL = "https://dopamine.\(device.version.major).\(device.version.minor).\(device.version.patch).kernelcache"
-                        if let url = URL(string: kernelURL) {
-                            if let data = try? Data(contentsOf: url) {
-                                try? data.write(to: URL(fileURLWithPath: kernelPath))
-                                if fileManager.fileExists(atPath: kernelPath) {
-                                    downloadSuccess.value = true
-                                    semaphore.signal()
-                                }
-                            }
-                        }
-                    }
-                    downloadGroup.leave()
+            let pipe = Pipe()
+            task.standardOutput = pipe
+            task.standardError = pipe
+            
+            do {
+                try task.run()
+                task.waitUntilExit()
+                
+                // 检查是否成功下载
+                if fileManager.fileExists(atPath: kernelPath) {
+                    return true
                 }
+            } catch {
+                NSLog("Dopamine kernel download failed - \(error)")
             }
-            
-            // 等待所有下载通道完成
-            downloadGroup.wait()
-            
-            // 如果下载成功，立即返回
-            if downloadSuccess.value {
+        }
+        
+        // 如果多巴胺下载失败，继续使用原有方式
+        while true {
+            if grab_kernelcache(kernelPath) {
                 return true
             }
-            
-            // 如果下载失败，等待1秒后继续重试
-            sleep(1)
         }
     }
     
     return true
 }
 
-// 线程安全的布尔值结构体
-struct AtomicBool {
-    private let queue = DispatchQueue(label: "com.atomicBool.queue")
-    private var _value: Bool
-    
-    init(_ initialValue: Bool) {
-        self._value = initialValue
-    }
-    
-    var value: Bool {
-        get {
-            return queue.sync { _value }
-        }
-        set {
-            queue.sync { _value = newValue }
-        }
-    }
-}
-
-// 线程安全的整数值结构体
-struct AtomicInteger {
-    private let queue = DispatchQueue(label: "com.atomicInteger.queue")
-    private var _value: Int
-    
-    init(_ initialValue: Int) {
-        self._value = initialValue
-    }
-    
-    var value: Int {
-        get {
-            return queue.sync { _value }
-        }
-        set {
-            queue.sync { _value = newValue }
-        }
-    }
-    
-    mutating func increment() {
-        queue.sync { _value += 1 }
-    }
-}
 
 func cleanupPrivatePreboot() -> Bool {
     // Remove /private/preboot/tmp
