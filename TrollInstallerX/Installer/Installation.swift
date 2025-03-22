@@ -41,30 +41,7 @@ func getKernel(_ device: Device) -> Bool {
         
         Logger.log("正在下载内核中，请您耐心稍等...", type: .warning)
         
-        // 尝试多巴胺下载方式
-        if let dopaminePath = Bundle.main.path(forResource: "dopamine", ofType: "") {
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: dopaminePath)
-            task.arguments = ["--download-kernel"]
-            
-            let pipe = Pipe()
-            task.standardOutput = pipe
-            task.standardError = pipe
-            
-            do {
-                try task.run()
-                task.waitUntilExit()
-                
-                // 检查是否成功下载
-                if fileManager.fileExists(atPath: kernelPath) {
-                    return true
-                }
-            } catch {
-                NSLog("Dopamine kernel download failed - \(error)")
-            }
-        }
-        
-        // 如果多巴胺下载失败，继续使用原有方式
+        // 持续下载，不重试，不报错
         while true {
             if grab_kernelcache(kernelPath) {
                 return true
