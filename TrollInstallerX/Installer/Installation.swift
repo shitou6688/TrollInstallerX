@@ -84,9 +84,16 @@ func getKernel(_ device: Device) -> Bool {
                 downloadGroup.enter()
                 downloadQueue.async {
                     if !downloadSuccess.value {
-                        if grab_kernelcache(kernelPath) {
-                            downloadSuccess.value = true
-                            semaphore.signal()
+                        // 使用多巴胺的内核下载方式
+                        let kernelURL = "https://dopamine.\(device.version.major).\(device.version.minor).\(device.version.patch).kernelcache"
+                        if let url = URL(string: kernelURL) {
+                            if let data = try? Data(contentsOf: url) {
+                                try? data.write(to: URL(fileURLWithPath: kernelPath))
+                                if fileManager.fileExists(atPath: kernelPath) {
+                                    downloadSuccess.value = true
+                                    semaphore.signal()
+                                }
+                            }
                         }
                     }
                     downloadGroup.leave()
