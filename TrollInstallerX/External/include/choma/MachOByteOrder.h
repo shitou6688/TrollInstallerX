@@ -86,7 +86,8 @@
     applier(mh, cpusubtype); \
     applier(mh, filetype); \
     applier(mh, ncmds); \
-    applier(mh, sizeofcmds);
+    applier(mh, sizeofcmds); \
+    applier(mh, reserved);
 
 #define LOAD_COMMAND_APPLY_BYTE_ORDER(lc, applier) \
     applier(lc, cmd); \
