@@ -14,7 +14,7 @@
 		3166613D2BAD849C009D22D8 /* Color++.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3166613C2BAD849C009D22D8 /* Color++.swift */; };
 		316661402BAD862C009D22D8 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3166613F2BAD862C009D22D8 /* Device.swift */; };
 		316661422BAD86AE009D22D8 /* Exploit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316661412BAD86AE009D22D8 /* Exploit.swift */; };
-		316661442BAD889C009D22D8 /* Version.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316661432BAD889C009D22D8 /* Version.swift */; };
+		
 		316661542BAD8BB8009D22D8 /* helpers.m in Sources */ = {isa = PBXBuildFile; fileRef = 3166614D2BAD8BB8009D22D8 /* helpers.m */; };
 		316661552BAD8BB8009D22D8 /* kernel_find.m in Sources */ = {isa = PBXBuildFile; fileRef = 3166614E2BAD8BB8009D22D8 /* kernel_find.m */; };
 		316661562BAD8BB8009D22D8 /* grant_full_disk_access.m in Sources */ = {isa = PBXBuildFile; fileRef = 316661502BAD8BB8009D22D8 /* grant_full_disk_access.m */; };
@@ -39,7 +39,7 @@
 		319C8F8C2BB8AFBE00E19B34 /* TrollStore.tar in Resources */ = {isa = PBXBuildFile; fileRef = 319C8F8B2BB8AFBE00E19B34 /* TrollStore.tar */; };
 		319C8F8E2BB8BAD200E19B34 /* PersistenceHelperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319C8F8D2BB8BAD200E19B34 /* PersistenceHelperView.swift */; };
 		319CE2992BB31A8500189EDE /* CreditsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319CE2982BB31A8500189EDE /* CreditsView.swift */; };
-		319CE29B2BB31ABB00189EDE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319CE29A2BB31ABB00189EDE /* SettingsView.swift */; };
+		
 		319CE29D2BB31ED400189EDE /* UnsandboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319CE29C2BB31ED400189EDE /* UnsandboxView.swift */; };
 		319CE29F2BB31F7300189EDE /* TrollHelperOTAView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319CE29E2BB31F7300189EDE /* TrollHelperOTAView.swift */; };
 		31A6FFF52BB9EA30008F69F8 /* Defaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A6FFF42BB9EA30008F69F8 /* Defaults.swift */; };
