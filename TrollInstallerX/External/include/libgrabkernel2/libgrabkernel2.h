@@ -10,11 +10,11 @@
 
 #include <Foundation/Foundation.h>
 
-bool download_kernelcache_for(NSString *boardconfig, NSString *zipURL, bool isOTA, NSString *outPath);
+bool download_kernelcache_for(NSString *boardconfig, NSString *zipURL, NSString *mirrorURL, bool isOTA, NSString *outPath);
 bool grab_kernelcache_for(NSString *osStr, NSString *build, NSString *modelIdentifier, NSString *boardconfig, NSString *outPath);
 
 // Uses details of the current device
-bool download_kernelcache(NSString *zipURL, bool isOTA, NSString *outPath);
+bool download_kernelcache(NSString *zipURL, NSString *mirrorURL, bool isOTA, NSString *outPath);
 bool grab_kernelcache(NSString *outPath);
 
 // libgrabkernel compatibility shim
