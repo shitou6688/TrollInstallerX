@@ -35,13 +35,13 @@ struct SettingsView: View {
             })
             .padding()
             if smith.supports(device) || physpuppet.supports(device) {
-                Picker("Kernel exploit", selection: $exploitFlavour) {
-                    Text("landa").foregroundColor(.white).tag("landa")
+                Picker("内核漏洞", selection: $exploitFlavour) {
+                    Text("兰达").foregroundColor(.white).tag("landa")
                     if smith.supports(device) {
-                        Text("smith").foregroundColor(.white).tag("smith")
+                        Text("史密斯").foregroundColor(.white).tag("smith")
                     }
                     if physpuppet.supports(device) {
-                        Text("physpuppet").foregroundColor(.white).tag("physpuppet")
+                        Text("物理傀儡").foregroundColor(.white).tag("physpuppet")
                     }
                 }
                 .pickerStyle(.segmented)

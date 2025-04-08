@@ -76,7 +76,7 @@ struct MainView: View {
                             if installationFinished && installedSuccessfully && device.supportsDirectInstall {
                                 Text("巨魔已安装成功，返回桌面查找大头巨魔！")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(.green)
                                     .padding(.top, 10)
                             }
                         }
@@ -92,7 +92,7 @@ struct MainView: View {
                             HStack {
                                 Image(systemName: "arrow.clockwise.circle")
                                     .font(.system(size: 18))
-                                Text("执行自动化安装程序")
+                                Text("开始安装")
                                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                             }
                             .foregroundColor(.white)
