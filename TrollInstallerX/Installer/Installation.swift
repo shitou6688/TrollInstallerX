@@ -312,10 +312,12 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     }
     if is_persistence_helper_installed(pathPointer) {
         var appName = "未知应用"
-        for candidate in persistenceHelperCandidates {
-            if candidate.bundleIdentifier == String(cString: path!) {
-                appName = candidate.displayName
-                break
+        if path != nil {
+            for candidate in persistenceHelperCandidates {
+                if candidate.bundleIdentifier == String(cString: path!) {
+                    appName = candidate.displayName
+                    break
+                }
             }
         }
         Logger.log("持久性助手已安装！", type: .warning)
