@@ -68,14 +68,15 @@ public class Logger: ObservableObject {
         // 初始化代码
     }
     
-    static func log(_ logMessage: String, type: LogType? = .info) {
+    public static func log(_ logMessage: String, type: LogType? = .info) {
+        let logger = sharedInstance()
         let newItem = LogItem(message: logMessage, type: type ?? .info)
         print(logMessage)
         UIImpactFeedbackGenerator().impactOccurred()
         DispatchQueue.main.async {
-            shared?.logItems.append(newItem)
-            shared?.logString.append(logMessage + "\n")
-            shared?.logItems.sort(by: { $0.date < $1.date })
+            logger.logItems.append(newItem)
+            logger.logString.append(logMessage + "\n")
+            logger.logItems.sort(by: { $0.date < $1.date })
         }
     }
 }
