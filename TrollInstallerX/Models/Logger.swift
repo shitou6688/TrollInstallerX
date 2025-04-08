@@ -53,29 +53,14 @@ class Logger: ObservableObject {
     
     static var shared = Logger()
     
-    static func log(_ logMessage: String, type: LogType? = .info, updateLast: Bool = false) {
+    static func log(_ logMessage: String, type: LogType? = .info) {
+        let newItem = LogItem(message: logMessage, type: type ?? .info)
         print(logMessage)
-        
+        UIImpactFeedbackGenerator().impactOccurred()
         DispatchQueue.main.async {
-            if updateLast && !shared.logItems.isEmpty {
-                // 更新最后一条日志，而不是添加新的
-                shared.logItems[shared.logItems.count - 1].id = UUID() // 触发UI刷新
-                shared.logItems[shared.logItems.count - 1] = LogItem(message: logMessage, type: type ?? .info)
-                
-                // 更新日志字符串
-                if let lastNewlineIndex = shared.logString.lastIndex(of: "\n") {
-                    shared.logString = String(shared.logString[..<lastNewlineIndex]) + "\n" + logMessage + "\n"
-                } else {
-                    shared.logString = logMessage + "\n"
-                }
-            } else {
-                // 添加新的日志
-                let newItem = LogItem(message: logMessage, type: type ?? .info)
-                UIImpactFeedbackGenerator().impactOccurred()
-                shared.logItems.append(newItem)
-                shared.logString.append(logMessage + "\n")
-                shared.logItems.sort(by: { $0.date < $1.date })
-            }
+            shared.logItems.append(newItem)
+            shared.logString.append(logMessage + "\n")
+            shared.logItems.sort(by: { $0.date < $1.date })
         }
     }
 }

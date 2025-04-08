@@ -29,78 +29,79 @@ struct MainView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                ZStack {
-                    LinearGradient(colors: [Color(hex: 0x0482d1), Color(hex: 0x0566ed)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        .ignoresSafeArea()
-                    VStack {
-                        VStack {
-                            Image("Icon")
-                                .resizable()
-                                .cornerRadius(22)
-                                .frame(maxWidth: 100, maxHeight: 100)
-                                .shadow(radius: 10)
-                            Text("TrollInstallerX")
-                                .font(.system(size: 30, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
-                            Text("开发者：Alfie CG")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.5))
-                            Text("iOS 14.0 - 16.6.1")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.5))
-                        }
-                        .padding(.vertical)
-                        
-                        if !isInstalling {
-                            MenuView(isShowingSettings: $isShowingSettings, isShowingCredits: $isShowingCredits, isShowingMDCAlert: $isShowingMDCAlert, isShowingOTAAlert: $isShowingOTAAlert, device: device)
-                                .frame(maxWidth: geometry.size.width / 1.2, maxHeight: geometry.size.height / 4)
-                                .transition(.scale)
-                                .padding()
-                                .shadow(radius: 10)
-                                .disabled(!device.isSupported)
-                        }
-                        
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .foregroundColor(.white.opacity(0.15))
-                                .frame(maxWidth: geometry.size.width / 1.2)
-                                .frame(maxHeight: isInstalling ? geometry.size.height / 1.75 : 60)
-                                .transition(.scale)
-                                .shadow(radius: 10)
-                            if isInstalling {
-                                LogView(installationFinished: $installationFinished)
-                                    .padding()
-                                    .frame(maxWidth: geometry.size.width / 1.2)
-                                    .frame(maxHeight: geometry.size.height / 1.75)
+                // 背景渐变
+                LinearGradient(colors: [Color(hex: 0x0482d1), Color(hex: 0x0566ed)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
+                
+                // 主界面内容
+                VStack {
+                    Spacer()
+                    
+                    // 图标
+                    Image("Icon")
+                        .resizable()
+                        .cornerRadius(22)
+                        .frame(width: 120, height: 120)
+                        .shadow(radius: 10)
+                    
+                    // 标题和信息
+                    Text("巨魔安装器X")
+                        .font(.system(size: 30, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.top, 10)
+                    
+                    Text("开发者：Alfie CG")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    Text("iOS 14.0 - 16.6.1")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    Spacer()
+                    
+                    // 安装状态或按钮
+                    if isInstalling {
+                        LogView(installationFinished: $installationFinished)
+                            .padding()
+                            .frame(maxWidth: geometry.size.width / 1.2)
+                            .frame(maxHeight: geometry.size.height / 1.75)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .foregroundColor(.white.opacity(0.15))
+                                    .shadow(radius: 10)
+                            )
+                    } else {
+                        Button(action: {
+                            if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
+                                UIImpactFeedbackGenerator().impactOccurred()
+                                withAnimation {
+                                    isInstalling.toggle()
+                                }
                             }
-                            else {
-                                Button(action: {
-                                    if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
-                                        UIImpactFeedbackGenerator().impactOccurred()
-                                        withAnimation {
-                                            isInstalling.toggle()
-                                        }
-                                    }
-                                }, label: {
-                                    Text(device.isSupported ? "安装 TrollStore" : "不支持")
-                                            .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                            .foregroundColor(device.isSupported ? .white : .secondary)
-                                            .padding()
-                                            .frame(maxWidth: geometry.size.width / 1.2)
-                                            .frame(maxHeight: 60)
-                                })
-                                .frame(maxWidth: geometry.size.width / 1.2)
-                                .frame(maxHeight: 60)
+                        }, label: {
+                            HStack {
+                                Image(systemName: "arrow.clockwise.circle")
+                                    .font(.system(size: 18))
+                                Text("执行自动化安装程序")
+                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
                             }
-                        }
-                        .padding()
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(width: geometry.size.width - 80)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .foregroundColor(.white.opacity(0.15))
+                            )
+                        })
                         .disabled(!device.isSupported)
-                        
-                        
-                        }
-                        .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                     }
+                    
+                    Spacer().frame(height: 40)
                 }
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                
+                // 弹窗
                 if isShowingOTAAlert {
                     PopupView(isShowingAlert: $isShowingOTAAlert, content: {
                         TrollHelperOTAView(arm64eVersion: .constant(false))
@@ -116,16 +117,14 @@ struct MainView: View {
                         SettingsView(device: device)
                     })
                 }
-                
                 if isShowingCredits {
                     PopupView(isShowingAlert: $isShowingCredits, content: {
                         CreditsView()
                     })
                 }
-            
-            if helperView.showAlert {
-                PopupView(isShowingAlert: $isShowingHelperAlert, shouldAllowDismiss: false, content: {
-                    PersistenceHelperView(isShowingHelperAlert: $isShowingHelperAlert, allowNoPersistenceHelper: device.supportsDirectInstall)
+                if helperView.showAlert {
+                    PopupView(isShowingAlert: $isShowingHelperAlert, shouldAllowDismiss: false, content: {
+                        PersistenceHelperView(isShowingHelperAlert: $isShowingHelperAlert, allowNoPersistenceHelper: device.supportsDirectInstall)
                     })
                 }
             }
@@ -182,7 +181,7 @@ struct MainView: View {
             }
         }
     }
-
+}
 
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
