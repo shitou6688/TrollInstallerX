@@ -311,7 +311,13 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         UnsafeMutablePointer<UnsafePointer<CChar>?>.init(ptr)
     }
     if is_persistence_helper_installed(pathPointer) {
-        Logger.log("持久性助手已安装! (\(path == nil ? "unknown" : String(cString: path!)))", type: .warning)
+        let appName = path == nil ? "未知应用" : String(cString: path!)
+        for candidate in persistenceHelperCandidates {
+            if appName.contains(candidate.bundleName) {
+                Logger.log("持久性助手已安装！请打开桌面上的\(candidate.displayName)应用", type: .warning)
+                break
+            }
+        }
         return false
     }
     
