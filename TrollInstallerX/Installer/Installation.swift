@@ -256,45 +256,18 @@ func doDirectInstall(_ device: Device) async -> Bool {
     let newCandidates = getCandidates()
     persistenceHelperCandidates = newCandidates
     
-    // 自动选择可注入的持久性助手
-    var selectedPath = ""
-    for candidate in persistenceHelperCandidates {
-        Logger.log("正在尝试注入 \(candidate.displayName)...")
-        if install_persistence_helper_via_vnode(candidate.bundlePath!) {
-            Logger.log("成功选择 \(candidate.displayName) 作为持久性助手", type: .success)
-            selectedPath = candidate.bundlePath!
-            break
-        } else {
-            Logger.log("\(candidate.displayName) 注入失败，尝试下一个应用", type: .warning)
-        }
+    // 自动尝试安装持久性助手
+    if !tryInstallPersistenceHelper(newCandidates) {
+        Logger.log("无法安装持久性助手", type: .error)
     }
     
-    if selectedPath.isEmpty {
-        Logger.log("所有应用都无法注入，请重启后重试", type: .error)
-        return false
-    }
-    
-    var success = false
-    if !install_persistence_helper_via_vnode(selectedPath) {
-        Logger.log("安装持久性助手失败", type: .error)
-        Logger.log("重启手机后，请再来点击安装！", type: .warning)
-        Logger.log("5秒后注销...", type: .warning)
-        DispatchQueue.global().async {
-            sleep(5)
-            restartBackboard()
-        }
+    Logger.log("正在安装 TrollStore")
+    if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
+        Logger.log("安装 TrollStore 失败", type: .error)
     } else {
-        Logger.log("成功安装持久性助手", type: .success)
-        success = true
-    }
-    
-    if success {
-        let verbose = TIXDefaults().bool(forKey: "verbose")
-        Logger.log("\(verbose ? "15" : "5") 秒后注销")
-        DispatchQueue.global().async {
-            sleep(verbose ? 15 : 5)
-            restartBackboard()
-        }
+        Logger.log("成功安装 TrollStore！", type: .success)
+        Logger.log("巨魔已安装成功，返回桌面查找大头巨魔！", type: .success)
+        Logger.log("如无显示，请在桌面右滑到资源库，搜 troll（没有的话重启一下）", type: .warning)
     }
     
     if !cleanupPrivatePreboot() {
@@ -350,21 +323,6 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     Logger.log("成功利用内核", type: .success)
     post_kernel_exploit(false)
     
-    var path: UnsafePointer<CChar>? = nil
-    let pathPointer = withUnsafeMutablePointer(to: &path) { ptr in
-        UnsafeMutablePointer<UnsafePointer<CChar>?>.init(ptr)
-    }
-    if is_persistence_helper_installed(pathPointer) {
-        let appName = path == nil ? "未知应用" : String(cString: path!)
-        for candidate in persistenceHelperCandidates {
-            if appName.contains(candidate.bundleName) {
-                Logger.log("持久性助手已安装！请打开桌面上的\(candidate.displayName)应用", type: .warning)
-                break
-            }
-        }
-        return false
-    }
-    
     let apps = get_installed_apps() as? [String]
     var candidates = [InstalledApp]()
     for app in apps ?? [String]() {
@@ -380,47 +338,35 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     persistenceHelperCandidates = candidates
     
-    // 自动选择可注入的持久性助手
-    var selectedPath = ""
-    for candidate in persistenceHelperCandidates {
-        Logger.log("正在尝试注入 \(candidate.displayName)...")
-        if install_persistence_helper_via_vnode(candidate.bundlePath!) {
-            Logger.log("成功选择 \(candidate.displayName) 作为持久性助手", type: .success)
-            selectedPath = candidate.bundlePath!
-            break
+    // 自动选择第一个可用的应用作为持久性助手
+    if let firstCandidate = candidates.first {
+        Logger.log("正在自动注入持久性助手到 \(firstCandidate.displayName)")
+        let pathToInstall = firstCandidate.bundlePath!
+        var success = false
+        if !install_persistence_helper_via_vnode(pathToInstall) {
+            Logger.log("安装持久性助手失败", type: .error)
+            Logger.log("重启手机后，请再来点击安装！", type: .warning)
+            Logger.log("5秒后注销...", type: .warning)
+            DispatchQueue.global().async {
+                sleep(5)
+                restartBackboard()
+            }
         } else {
-            Logger.log("\(candidate.displayName) 注入失败，尝试下一个应用", type: .warning)
+            Logger.log("成功安装持久性助手", type: .success)
+            success = true
         }
-    }
-    
-    if selectedPath.isEmpty {
-        Logger.log("所有应用都无法注入，请重启后重试", type: .error)
-        return false
-    }
-    
-    var success = false
-    if !install_persistence_helper_via_vnode(selectedPath) {
-        Logger.log("安装持久性助手失败", type: .error)
-        Logger.log("重启手机后，请再来点击安装！", type: .warning)
-        Logger.log("5秒后注销...", type: .warning)
-        DispatchQueue.global().async {
-            sleep(5)
-            restartBackboard()
+        
+        if success {
+            let verbose = TIXDefaults().bool(forKey: "verbose")
+            Logger.log("\(verbose ? "15" : "5") 秒后注销")
+            DispatchQueue.global().async {
+                sleep(verbose ? 15 : 5)
+                restartBackboard()
+            }
         }
-    } else {
-        Logger.log("成功安装持久性助手", type: .success)
-        success = true
+        return true
     }
     
-    if success {
-        let verbose = TIXDefaults().bool(forKey: "verbose")
-        Logger.log("\(verbose ? "15" : "5") 秒后注销")
-        DispatchQueue.global().async {
-            sleep(verbose ? 15 : 5)
-            restartBackboard()
-        }
-    }
-    
-    return true
+    Logger.log("未找到可用的应用来安装持久性助手", type: .error)
+    return false
 }
-
