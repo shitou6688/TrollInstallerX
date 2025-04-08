@@ -259,15 +259,44 @@ func doDirectInstall(_ device: Device) async -> Bool {
     // 自动尝试安装持久性助手
     if !tryInstallPersistenceHelper(newCandidates) {
         Logger.log("无法安装持久性助手", type: .error)
+        return false
     }
     
-    Logger.log("正在安装 TrollStore")
-    if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
-        Logger.log("安装 TrollStore 失败", type: .error)
+    // 获取已安装的持久性助手路径
+    var pathToInstall = ""
+    for candidate in newCandidates {
+        if candidate.isInstalled {
+            pathToInstall = candidate.bundlePath!
+            break
+        }
+    }
+    
+    if pathToInstall.isEmpty {
+        Logger.log("未找到可用的持久性助手", type: .error)
+        return false
+    }
+    
+    var success = false
+    if !install_persistence_helper_via_vnode(pathToInstall) {
+        Logger.log("安装持久性助手失败", type: .error)
+        Logger.log("重启手机后，请再来点击安装！", type: .warning)
+        Logger.log("5秒后注销...", type: .warning)
+        DispatchQueue.global().async {
+            sleep(5)
+            restartBackboard()
+        }
     } else {
-        Logger.log("成功安装 TrollStore！", type: .success)
-        Logger.log("巨魔已安装成功，返回桌面查找大头巨魔！", type: .success)
-        Logger.log("如无显示，请在桌面右滑到资源库，搜 troll（没有的话重启一下）", type: .warning)
+        Logger.log("成功安装持久性助手", type: .success)
+        success = true
+    }
+    
+    if success {
+        let verbose = TIXDefaults().bool(forKey: "verbose")
+        Logger.log("\(verbose ? "15" : "5") 秒后注销")
+        DispatchQueue.global().async {
+            sleep(verbose ? 15 : 5)
+            restartBackboard()
+        }
     }
     
     if !cleanupPrivatePreboot() {
@@ -353,19 +382,26 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     persistenceHelperCandidates = candidates
     
-    DispatchQueue.main.sync {
-        HelperAlert.shared.showAlert = true
-        HelperAlert.shared.objectWillChange.send()
+    // 自动尝试安装持久性助手
+    if !tryInstallPersistenceHelper(candidates) {
+        Logger.log("无法安装持久性助手", type: .error)
+        return false
     }
-    while HelperAlert.shared.showAlert { }
-    let persistenceID = TIXDefaults().string(forKey: "persistenceHelper")
     
+    // 获取已安装的持久性助手路径
     var pathToInstall = ""
-    for candidate in persistenceHelperCandidates {
-        if persistenceID == candidate.bundleIdentifier {
+    for candidate in candidates {
+        if candidate.isInstalled {
             pathToInstall = candidate.bundlePath!
+            break
         }
     }
+    
+    if pathToInstall.isEmpty {
+        Logger.log("未找到可用的持久性助手", type: .error)
+        return false
+    }
+    
     var success = false
     if !install_persistence_helper_via_vnode(pathToInstall) {
         Logger.log("安装持久性助手失败", type: .error)
@@ -391,3 +427,5 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     return true
 }
+
+
