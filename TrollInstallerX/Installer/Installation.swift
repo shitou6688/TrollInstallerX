@@ -18,35 +18,50 @@ func checkForMDCUnsandbox() -> Bool {
 }
 
 func getKernel(_ device: Device) -> Bool {
-    if !fileManager.fileExists(atPath: kernelPath) {
-        if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
-            try? fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
-            if fileManager.fileExists(atPath: kernelPath) { return true }
+    Logger.log("正在下载内核，请稍等...")
+    
+    while true {  // 持续尝试直到成功
+        if fileManager.fileExists(atPath: kernelPath) {
+            Logger.log("内核缓存已存在")
+            return true
         }
+        
+        // 检查是否有捆绑的内核缓存
+        if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
+            do {
+                try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
+                if fileManager.fileExists(atPath: kernelPath) { 
+                    Logger.log("已使用捆绑的内核缓存文件")
+                    return true 
+                }
+            } catch {
+                Logger.log("复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
+            }
+        }
+        
+        // 使用MacDirtyCow尝试获取内核缓存
         if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
             let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
             if fd > 0 {
                 let tokenData = get_NSString_from_file(fd)
                 sandbox_extension_consume(tokenData)
-                Logger.log("正在复制内核缓存")
                 let path = get_kernelcache_path()
                 do {
                     try fileManager.copyItem(atPath: path!, toPath: kernelPath)
+                    Logger.log("使用MacDirtyCow获取内核缓存成功")
                     return true
                 } catch {
-                    Logger.log("复制内核缓存失败", type: .error)
-                    NSLog("Failed to copy kernelcache - \(error)")
+                    Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
                 }
             }
         }
-        Logger.log("正在下载内核")
-        if !grab_kernelcache(kernelPath) {
-            Logger.log("下载内核失败", type: .error)
-            return false
+        
+        // 尝试下载内核
+        if grab_kernelcache(kernelPath) {
+            Logger.log("内核下载成功")
+            return true
         }
     }
-    
-    return true
 }
 
 
@@ -91,6 +106,24 @@ func tryInstallPersistenceHelper(_ candidates: [InstalledApp]) -> Bool {
     return false
 }
 
+// 添加内核查找函数的更健壮版本
+func robustInitialiseKernelInfo(_ kernelPath: String, _ iOS14: Bool) -> Bool {
+    for attempt in 1...3 {
+        Logger.log("正在查找内核漏洞 (尝试 \(attempt)/3)")
+        if initialise_kernel_info(kernelPath, iOS14) {
+            Logger.log("查找内核漏洞成功")
+            return true
+        }
+        
+        Logger.log("查找内核漏洞失败，将尝试重试", type: .error)
+        // 短暂等待后重试
+        sleep(1)
+    }
+    
+    Logger.log("查找内核漏洞失败，已尝试3次", type: .error)
+    return false
+}
+
 @discardableResult
 func doDirectInstall(_ device: Device) async -> Bool {
     
@@ -109,7 +142,7 @@ func doDirectInstall(_ device: Device) async -> Bool {
     }
     
     Logger.log("正在查找内核漏洞")
-    if !initialise_kernel_info(kernelPath, iOS14) {
+    if !robustInitialiseKernelInfo(kernelPath, iOS14) {
         Logger.log("查找内核漏洞失败", type: .error)
         return false
     }
@@ -255,7 +288,7 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     }
     
     Logger.log("正在查找内核漏洞")
-    if !initialise_kernel_info(kernelPath, false) {
+    if !robustInitialiseKernelInfo(kernelPath, false) {
         Logger.log("查找内核漏洞失败", type: .error)
         return false
     }
