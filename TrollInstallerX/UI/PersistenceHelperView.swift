@@ -31,12 +31,12 @@ struct PersistenceHelperView: View {
                     }
                 } else {
                     // 原始标题
-                    Text("选择一个应用作为持久性助手")
+                    Text("持久性助手")
                         .font(.system(size: 23, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                     
                     if allowNoPersistenceHelper {
-                        Text("如果您已经安装了持久性助手，请点击底部的"跳过"按钮")
+                        Text("如果您已经安装了一个持久性助手，请滚动到底部。")
                             .font(.system(size: 16, weight: .regular, design: .rounded))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
@@ -79,12 +79,12 @@ struct PersistenceHelperView: View {
                             }
                         }, label: {
                             HStack {
-                                Image(systemName: "arrow.forward.circle")
+                                Image(systemName: "xmark.circle")
                                     .resizable()
                                     .frame(width: 44, height: 44)
                                     .cornerRadius(10)
-                                    .foregroundColor(.blue)
-                                Text("跳过（已安装持久性助手）")
+                                    .foregroundColor(.red)
+                                Text("没有持久性助手")
                                     .font(.system(size: 20, weight: .regular, design: .rounded))
                                     .foregroundColor(.white)
                                     .padding(.leading)
