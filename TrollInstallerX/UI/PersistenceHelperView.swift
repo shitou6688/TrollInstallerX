@@ -11,9 +11,6 @@ struct PersistenceHelperView: View {
     @Binding var isShowingHelperAlert: Bool
     let allowNoPersistenceHelper: Bool
     var body: some View {
-        ZStack {
-            LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.7), Color.purple.opacity(0.7)]), startPoint: .topLeading, endPoint: .bottomTrailing)
-                .edgesIgnoringSafeArea(.all)
         ScrollView {
             VStack {
                 Text("持久性助手")
@@ -27,8 +24,6 @@ struct PersistenceHelperView: View {
                 }
             }
             .padding()
-            .background(RoundedRectangle(cornerRadius: 15).fill(Color.white.opacity(0.1)))
-            .shadow(radius: 5)
             VStack(spacing: 20) {
                 ForEach(persistenceHelperCandidates, id: \.self) { candidate in
                     Button(action: {
