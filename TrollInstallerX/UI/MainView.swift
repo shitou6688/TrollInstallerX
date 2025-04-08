@@ -74,9 +74,9 @@ struct MainView: View {
                                 )
                             
                             if installationFinished && installedSuccessfully && device.supportsDirectInstall {
-                                Text("如无显示，请在桌面右滑到资源库，搜 troll（没有的话重启一下）")
+                                Text("巨魔已安装成功，返回桌面查找大头巨魔！")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(.green)
                                     .padding(.top, 10)
                             }
                         }

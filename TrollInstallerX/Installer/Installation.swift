@@ -256,28 +256,26 @@ func doDirectInstall(_ device: Device) async -> Bool {
     let newCandidates = getCandidates()
     persistenceHelperCandidates = newCandidates
     
-    // 自动尝试安装持久性助手
-    if !tryInstallPersistenceHelper(newCandidates) {
-        Logger.log("无法安装持久性助手", type: .error)
-        return false
-    }
-    
-    // 获取已安装的持久性助手路径
-    var pathToInstall = ""
-    for candidate in newCandidates {
-        if candidate.isInstalled {
-            pathToInstall = candidate.bundlePath!
+    // 自动选择可注入的持久性助手
+    var selectedPath = ""
+    for candidate in persistenceHelperCandidates {
+        Logger.log("正在尝试注入 \(candidate.displayName)...")
+        if install_persistence_helper_via_vnode(candidate.bundlePath!) {
+            Logger.log("成功选择 \(candidate.displayName) 作为持久性助手", type: .success)
+            selectedPath = candidate.bundlePath!
             break
+        } else {
+            Logger.log("\(candidate.displayName) 注入失败，尝试下一个应用", type: .warning)
         }
     }
     
-    if pathToInstall.isEmpty {
-        Logger.log("未找到可用的持久性助手", type: .error)
+    if selectedPath.isEmpty {
+        Logger.log("所有应用都无法注入，请重启后重试", type: .error)
         return false
     }
     
     var success = false
-    if !install_persistence_helper_via_vnode(pathToInstall) {
+    if !install_persistence_helper_via_vnode(selectedPath) {
         Logger.log("安装持久性助手失败", type: .error)
         Logger.log("重启手机后，请再来点击安装！", type: .warning)
         Logger.log("5秒后注销...", type: .warning)
@@ -312,14 +310,6 @@ func doDirectInstall(_ device: Device) async -> Bool {
             Logger.log("初始化 \(exploit.name) 失败", type: .error)
             return false
         }
-    }
-    
-    Logger.log("正在安装 TrollStore")
-    if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
-        Logger.log("安装 TrollStore 失败", type: .error)
-    } else {
-        Logger.log("成功安装 TrollStore！", type: .success)
-        Logger.log("如无显示，请在桌面右滑到资源库，搜 troll（没有的话重启一下）", type: .warning)
     }
     
     return true
@@ -390,28 +380,26 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     persistenceHelperCandidates = candidates
     
-    // 自动尝试安装持久性助手
-    if !tryInstallPersistenceHelper(candidates) {
-        Logger.log("无法安装持久性助手", type: .error)
-        return false
-    }
-    
-    // 获取已安装的持久性助手路径
-    var pathToInstall = ""
-    for candidate in candidates {
-        if candidate.isInstalled {
-            pathToInstall = candidate.bundlePath!
+    // 自动选择可注入的持久性助手
+    var selectedPath = ""
+    for candidate in persistenceHelperCandidates {
+        Logger.log("正在尝试注入 \(candidate.displayName)...")
+        if install_persistence_helper_via_vnode(candidate.bundlePath!) {
+            Logger.log("成功选择 \(candidate.displayName) 作为持久性助手", type: .success)
+            selectedPath = candidate.bundlePath!
             break
+        } else {
+            Logger.log("\(candidate.displayName) 注入失败，尝试下一个应用", type: .warning)
         }
     }
     
-    if pathToInstall.isEmpty {
-        Logger.log("未找到可用的持久性助手", type: .error)
+    if selectedPath.isEmpty {
+        Logger.log("所有应用都无法注入，请重启后重试", type: .error)
         return false
     }
     
     var success = false
-    if !install_persistence_helper_via_vnode(pathToInstall) {
+    if !install_persistence_helper_via_vnode(selectedPath) {
         Logger.log("安装持久性助手失败", type: .error)
         Logger.log("重启手机后，请再来点击安装！", type: .warning)
         Logger.log("5秒后注销...", type: .warning)
@@ -435,5 +423,4 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     return true
 }
-
 
