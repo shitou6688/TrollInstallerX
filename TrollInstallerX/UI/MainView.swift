@@ -30,8 +30,23 @@ struct MainView: View {
         GeometryReader { geometry in
             ZStack {
                 // 背景渐变
-                LinearGradient(colors: [Color(hex: 0x0482d1), Color(hex: 0x0566ed)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .ignoresSafeArea()
+                LinearGradient(
+                    colors: [
+                        Color(hex: 0x1E90FF).opacity(0.9),   // 亮蓝色
+                        Color(hex: 0x4169E1).opacity(0.7),   // 皇家蓝
+                        Color(hex: 0x6A5ACD)                 // 板岩蓝
+                    ], 
+                    startPoint: .topLeading, 
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                .overlay(
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.1), Color.black.opacity(0.2)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
                 
                 // 主界面内容
                 VStack {
@@ -40,23 +55,31 @@ struct MainView: View {
                     // 图标
                     Image("Icon")
                         .resizable()
-                        .cornerRadius(22)
-                        .frame(width: 120, height: 120)
-                        .shadow(radius: 10)
+                        .aspectRatio(contentMode: .fit)
+                        .cornerRadius(25)
+                        .frame(width: 140, height: 140)
+                        .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 2)
+                        )
                     
                     // 标题和信息
                     Text("巨魔安装器X")
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                        .padding(.top, 10)
+                        .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 2)
+                        .padding(.top, 15)
                     
                     Text("开发者：Alfie CG")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(.system(size: 18, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.7))
+                        .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 1)
                     
                     Text("iOS 14.0 - 16.6.1")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
                         .foregroundColor(.white.opacity(0.5))
+                        .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
                     
                     Spacer()
                     
@@ -84,26 +107,39 @@ struct MainView: View {
                         Button(action: {
                             if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
                                 UIImpactFeedbackGenerator().impactOccurred()
-                                withAnimation {
+                                withAnimation(.spring()) {
                                     isInstalling.toggle()
                                 }
                             }
                         }, label: {
                             HStack {
-                                Image(systemName: "arrow.clockwise.circle")
-                                    .font(.system(size: 18))
+                                Image(systemName: "arrow.clockwise.circle.fill")
+                                    .font(.system(size: 22, weight: .semibold))
                                 Text("开始安装")
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
                             }
                             .foregroundColor(.white)
                             .padding()
-                            .frame(width: geometry.size.width - 80)
+                            .frame(width: geometry.size.width - 60)
                             .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .foregroundColor(.white.opacity(0.15))
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: 0x4169E1).opacity(0.8),
+                                        Color(hex: 0x6A5ACD).opacity(0.9)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(15)
+                            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 15)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
                             )
                         })
                         .disabled(!device.isSupported)
+                        .animation(.spring(), value: device.isSupported)
                     }
                     
                     Spacer().frame(height: 40)
