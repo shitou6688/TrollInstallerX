@@ -311,7 +311,13 @@ func doIndirectInstall(_ device: Device) async -> Bool {
         UnsafeMutablePointer<UnsafePointer<CChar>?>.init(ptr)
     }
     if is_persistence_helper_installed(pathPointer) {
-        Logger.log("持久性助手已安装! (\(path == nil ? "unknown" : String(cString: path!)))", type: .warning)
+        let appName = path == nil ? "未知应用" : String(cString: path!)
+        let displayName = persistenceHelperCandidates.first { candidate in
+            candidate.bundlePath == appName
+        }?.displayName ?? "未知应用"
+        
+        Logger.log("持久性助手已安装在【\(displayName)】中！", type: .warning)
+        Logger.log("请打开【\(displayName)】这个软件（找不到这个软件，桌面上搜一下）", type: .warning)
         return false
     }
     
@@ -346,6 +352,25 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     var success = false
     if !install_persistence_helper_via_vnode(pathToInstall) {
         Logger.log("安装持久性助手失败", type: .error)
+        
+        // 添加注销和用户提示逻辑
+        DispatchQueue.main.sync {
+            // 显示错误提示
+            HelperAlert.shared.showAlert = true
+            HelperAlert.shared.alertTitle = "安装失败"
+            HelperAlert.shared.alertMessage = "重启手机后，请再来点击安装！"
+            HelperAlert.shared.objectWillChange.send()
+        }
+        
+        // 5秒后注销
+        let verbose = TIXDefaults().bool(forKey: "verbose")
+        Logger.log("\(verbose ? "15" : "5") 秒后注销")
+        DispatchQueue.global().async {
+            sleep(verbose ? 15 : 5)
+            restartBackboard()
+        }
+        
+        return false
     } else {
         Logger.log("成功安装持久性助手", type: .success)
         success = true
