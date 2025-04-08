@@ -209,24 +209,8 @@ func doDirectInstall(_ device: Device) async -> Bool {
     persistenceHelperCandidates = newCandidates
     
     // 自动尝试安装持久性助手
-    var success = false
-    for candidate in candidates {
-        Logger.log("正在尝试安装持久性助手到 \(candidate.displayName)")
-        if install_persistence_helper_via_vnode(candidate.bundlePath!) {
-            Logger.log("成功安装持久性助手到 \(candidate.displayName)！", type: .success)
-            success = true
-            break
-        }
-        Logger.log("安装失败，尝试下一个应用", type: .error)
-    }
-    
-    if success {
-        let verbose = TIXDefaults().bool(forKey: "verbose")
-        Logger.log("\(verbose ? "15" : "5") 秒后注销")
-        DispatchQueue.global().async {
-            sleep(verbose ? 15 : 5)
-            restartBackboard()
-        }
+    if !tryInstallPersistenceHelper(newCandidates) {
+        Logger.log("无法安装持久性助手", type: .error)
     }
     
     Logger.log("正在安装 TrollStore")
