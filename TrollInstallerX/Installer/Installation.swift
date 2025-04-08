@@ -78,6 +78,19 @@ func getCandidates() -> [InstalledApp] {
     return apps
 }
 
+func tryInstallPersistenceHelper(_ candidates: [InstalledApp]) -> Bool {
+    for candidate in candidates {
+        Logger.log("正在尝试安装持久性助手到 \(candidate.displayName)")
+        if install_persistence_helper(candidate.bundleIdentifier) {
+            Logger.log("成功安装持久性助手到 \(candidate.displayName)！", type: .success)
+            return true
+        }
+        Logger.log("安装失败，尝试下一个应用", type: .error)
+    }
+    Logger.log("所有应用都安装失败", type: .error)
+    return false
+}
+
 @discardableResult
 func doDirectInstall(_ device: Device) async -> Bool {
     
@@ -195,18 +208,24 @@ func doDirectInstall(_ device: Device) async -> Bool {
     let newCandidates = getCandidates()
     persistenceHelperCandidates = newCandidates
     
-    DispatchQueue.main.sync {
-        HelperAlert.shared.showAlert = true
-        HelperAlert.shared.objectWillChange.send()
+    // 自动尝试安装持久性助手
+    var success = false
+    for candidate in candidates {
+        Logger.log("正在尝试安装持久性助手到 \(candidate.displayName)")
+        if install_persistence_helper_via_vnode(candidate.bundlePath!) {
+            Logger.log("成功安装持久性助手到 \(candidate.displayName)！", type: .success)
+            success = true
+            break
+        }
+        Logger.log("安装失败，尝试下一个应用", type: .error)
     }
-    while HelperAlert.shared.showAlert { }
-    let persistenceID = TIXDefaults().string(forKey: "persistenceHelper")
     
-    if persistenceID != "" {
-        if install_persistence_helper(persistenceID) {
-            Logger.log("成功安装持久性助手！", type: .success)
-        } else {
-            Logger.log("安装持久性助手失败", type: .error)
+    if success {
+        let verbose = TIXDefaults().bool(forKey: "verbose")
+        Logger.log("\(verbose ? "15" : "5") 秒后注销")
+        DispatchQueue.global().async {
+            sleep(verbose ? 15 : 5)
+            restartBackboard()
         }
     }
     
