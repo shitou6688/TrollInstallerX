@@ -39,11 +39,7 @@ struct Device {
         self.isArm64e = cpusubtype == CPU_SUBTYPE_ARM64E
         
         // Check if device supports TrollHelperOTA
-        if self.isArm64e {
-            supportsOTA = self.version < Version("15.7")
-        } else {
-            supportsOTA = self.version >= Version("15.0") && self.version < Version("15.5")
-        }
+        self.supportsOTA = false  // 直接设置为 false，跳过 OTA 弹窗
         
         // Set the CPU family (for checking dmaFail compatibility)
         var deviceCPU = 0
