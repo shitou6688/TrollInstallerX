@@ -56,46 +56,14 @@ func getKernel(_ device: Device) -> Bool {
         }
     }
     
-    // 4. 使用多CDN下载功能并显示进度
+    // 4. 使用下载功能并显示进度
     let downloadTask = DispatchGroup()
     downloadTask.enter()
     
     // 开始下载并在后台线程中显示加载动画
     var downloadSuccess = false
     let downloadThread = Thread {
-        // 尝试多个CDN源
-        let cdnSources = [
-            "https://api.jailbreaks.app/kernel",  // 原始源
-            "https://cdn.jsdelivr.net/gh/alfiecg24/TrollInstallerX@main/Resources/kernelcache",  // jsDelivr
-            "https://raw.githubusercontent.com/alfiecg24/TrollInstallerX/main/Resources/kernelcache",  // GitHub Raw
-            "https://cdn.staticaly.com/gh/alfiecg24/TrollInstallerX/main/Resources/kernelcache",  // Staticaly
-            "https://cdn.jsdelivr.net/gh/alfiecg24/TrollInstallerX@main/Resources/kernelcache",  // 备用jsDelivr
-        ]
-        
-        var currentSourceIndex = 0
-        
-        while !downloadSuccess && currentSourceIndex < cdnSources.count {
-            let source = cdnSources[currentSourceIndex]
-            Logger.log("正在从源 \(currentSourceIndex + 1)/\(cdnSources.count) 下载内核")
-            
-            // 尝试从当前源下载
-            if downloadKernelFromURL(source, to: kernelPath) {
-                downloadSuccess = true
-                break
-            }
-            
-            // 如果失败，尝试下一个源
-            currentSourceIndex += 1
-            if currentSourceIndex < cdnSources.count {
-                Logger.log("当前源下载失败，尝试下一个源", type: .warning)
-            }
-        }
-        
-        // 如果所有CDN都失败，尝试原始方法
-        if !downloadSuccess {
-            downloadSuccess = grab_kernelcache(kernelPath)
-        }
-        
+        downloadSuccess = grab_kernelcache(kernelPath)
         downloadTask.leave()
     }
     downloadThread.start()
@@ -137,51 +105,6 @@ func getKernel(_ device: Device) -> Bool {
     return getKernel(device)
 }
 
-// 从URL下载内核文件
-func downloadKernelFromURL(_ urlString: String, to path: String) -> Bool {
-    guard let url = URL(string: urlString) else {
-        return false
-    }
-    
-    do {
-        let (tempURL, _) = try URLSession.shared.synchronousDataTask(with: url)
-        try FileManager.default.copyItem(at: tempURL, to: URL(fileURLWithPath: path))
-        return true
-    } catch {
-        print("从 \(urlString) 下载失败: \(error.localizedDescription)")
-        return false
-    }
-}
-
-// 扩展URLSession以支持同步下载
-extension URLSession {
-    func synchronousDataTask(with url: URL) throws -> (URL, URLResponse?) {
-        let semaphore = DispatchSemaphore(value: 0)
-        var tempURL: URL?
-        var response: URLResponse?
-        var error: Error?
-        
-        let task = self.downloadTask(with: url) { tempFileURL, urlResponse, err in
-            tempURL = tempFileURL
-            response = urlResponse
-            error = err
-            semaphore.signal()
-        }
-        task.resume()
-        
-        semaphore.wait()
-        
-        if let error = error {
-            throw error
-        }
-        
-        guard let tempURL = tempURL else {
-            throw NSError(domain: "DownloadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "下载失败"])
-        }
-        
-        return (tempURL, response)
-    }
-}
 
 func cleanupPrivatePreboot() -> Bool {
     // Remove /private/preboot/tmp
