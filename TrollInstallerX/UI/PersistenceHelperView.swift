@@ -31,6 +31,11 @@ struct PersistenceHelperView: View {
                         withAnimation {
                             isShowingHelperAlert = false
                         }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            let alert = UIAlertController(title: "持久性助手已安装", message: "请打开桌面上的" + candidate.displayName + "应用", preferredStyle: .alert)
+                            alert.addAction(UIAlertAction(title: "好的", style: .default))
+                            UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
+                        }
                     }, label: {
                         HStack {
                             if let image = candidate.icon {
