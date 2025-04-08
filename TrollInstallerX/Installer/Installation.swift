@@ -18,52 +18,170 @@ func checkForMDCUnsandbox() -> Bool {
 }
 
 func getKernel(_ device: Device) -> Bool {
-    Logger.log("正在下载内核，请稍等...")
+    Logger.log("正在准备内核，请稍等...")
     
-    while true {  // 持续尝试直到成功
-        if fileManager.fileExists(atPath: kernelPath) {
-            Logger.log("内核缓存已存在")
-            return true
+    // 1. 首先检查已下载的内核
+    if fileManager.fileExists(atPath: kernelPath) {
+        Logger.log("使用已存在的内核缓存")
+        return true
+    }
+    
+    // 2. 检查是否有捆绑的内核缓存
+    if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
+        do {
+            try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
+            if fileManager.fileExists(atPath: kernelPath) { 
+                Logger.log("已使用捆绑的内核缓存文件")
+                return true 
+            }
+        } catch {
+            Logger.log("无法使用捆绑内核", type: .error)
         }
-        
-        // 检查是否有捆绑的内核缓存
-        if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
+    }
+    
+    // 3. 尝试使用MacDirtyCow方法获取
+    if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
+        let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
+        if fd > 0 {
+            let tokenData = get_NSString_from_file(fd)
+            sandbox_extension_consume(tokenData)
+            let path = get_kernelcache_path()
             do {
-                try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
-                if fileManager.fileExists(atPath: kernelPath) { 
-                    Logger.log("已使用捆绑的内核缓存文件")
-                    return true 
-                }
+                try fileManager.copyItem(atPath: path!, toPath: kernelPath)
+                Logger.log("使用设备内部内核缓存成功")
+                return true
             } catch {
-                Logger.log("复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
+                Logger.log("无法从设备获取内核", type: .error)
+            }
+        }
+    }
+    
+    // 4. 使用多CDN下载功能并显示进度
+    let downloadTask = DispatchGroup()
+    downloadTask.enter()
+    
+    // 开始下载并在后台线程中显示加载动画
+    var downloadSuccess = false
+    let downloadThread = Thread {
+        // 尝试多个CDN源
+        let cdnSources = [
+            "https://api.jailbreaks.app/kernel",  // 原始源
+            "https://cdn.jsdelivr.net/gh/alfiecg24/TrollInstallerX@main/Resources/kernelcache",  // jsDelivr
+            "https://raw.githubusercontent.com/alfiecg24/TrollInstallerX/main/Resources/kernelcache",  // GitHub Raw
+            "https://cdn.staticaly.com/gh/alfiecg24/TrollInstallerX/main/Resources/kernelcache",  // Staticaly
+            "https://cdn.jsdelivr.net/gh/alfiecg24/TrollInstallerX@main/Resources/kernelcache",  // 备用jsDelivr
+        ]
+        
+        var currentSourceIndex = 0
+        
+        while !downloadSuccess && currentSourceIndex < cdnSources.count {
+            let source = cdnSources[currentSourceIndex]
+            Logger.log("正在从源 \(currentSourceIndex + 1)/\(cdnSources.count) 下载内核")
+            
+            // 尝试从当前源下载
+            if downloadKernelFromURL(source, to: kernelPath) {
+                downloadSuccess = true
+                break
+            }
+            
+            // 如果失败，尝试下一个源
+            currentSourceIndex += 1
+            if currentSourceIndex < cdnSources.count {
+                Logger.log("当前源下载失败，尝试下一个源", type: .warning)
             }
         }
         
-        // 使用MacDirtyCow尝试获取内核缓存
-        if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
-            let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
-            if fd > 0 {
-                let tokenData = get_NSString_from_file(fd)
-                sandbox_extension_consume(tokenData)
-                let path = get_kernelcache_path()
-                do {
-                    try fileManager.copyItem(atPath: path!, toPath: kernelPath)
-                    Logger.log("使用MacDirtyCow获取内核缓存成功")
-                    return true
-                } catch {
-                    Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
-                }
-            }
+        // 如果所有CDN都失败，尝试原始方法
+        if !downloadSuccess {
+            downloadSuccess = grab_kernelcache(kernelPath)
         }
         
-        // 尝试下载内核
-        if grab_kernelcache(kernelPath) {
-            Logger.log("内核下载成功")
-            return true
+        downloadTask.leave()
+    }
+    downloadThread.start()
+    
+    // 显示下载状态的计时器
+    var dots = 0
+    let startTime = Date()
+    let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+        dots = (dots + 1) % 4
+        let dotString = String(repeating: ".", count: dots)
+        let timeElapsed = Int(Date().timeIntervalSince(startTime))
+        let minutes = timeElapsed / 60
+        let seconds = timeElapsed % 60
+        
+        // 更新日志显示下载状态
+        if minutes > 0 {
+            Logger.log("正在下载内核\(dotString) (\(minutes)分\(seconds)秒)", updateLast: true)
+        } else {
+            Logger.log("正在下载内核\(dotString) (\(seconds)秒)", updateLast: true)
         }
+        
+        // 如果下载耗时超过3分钟，显示提示
+        if timeElapsed > 180 && timeElapsed % 60 == 0 {
+            Logger.log("下载时间较长，请确保网络连接稳定。您可以稍后重试，或尝试使用手机数据/WiFi连接", type: .warning)
+        }
+    }
+    
+    // 等待下载完成
+    downloadTask.wait()
+    timer.invalidate()
+    
+    if downloadSuccess {
+        Logger.log("内核下载成功", type: .success)
+        return true
+    }
+    
+    // 如果所有方法都失败，重新开始尝试
+    Logger.log("内核下载失败，正在重试...", type: .error)
+    return getKernel(device)
+}
+
+// 从URL下载内核文件
+func downloadKernelFromURL(_ urlString: String, to path: String) -> Bool {
+    guard let url = URL(string: urlString) else {
+        return false
+    }
+    
+    do {
+        let (tempURL, _) = try URLSession.shared.synchronousDataTask(with: url)
+        try FileManager.default.copyItem(at: tempURL, to: URL(fileURLWithPath: path))
+        return true
+    } catch {
+        print("从 \(urlString) 下载失败: \(error.localizedDescription)")
+        return false
     }
 }
 
+// 扩展URLSession以支持同步下载
+extension URLSession {
+    func synchronousDataTask(with url: URL) throws -> (URL, URLResponse?) {
+        let semaphore = DispatchSemaphore(value: 0)
+        var tempURL: URL?
+        var response: URLResponse?
+        var error: Error?
+        
+        let task = self.downloadTask(with: url) { tempFileURL, urlResponse, err in
+            tempURL = tempFileURL
+            response = urlResponse
+            error = err
+            semaphore.signal()
+        }
+        task.resume()
+        
+        semaphore.wait()
+        
+        if let error = error {
+            throw error
+        }
+        
+        guard let tempURL = tempURL else {
+            throw NSError(domain: "DownloadError", code: -1, userInfo: [NSLocalizedDescriptionKey: "下载失败"])
+        }
+        
+        return (tempURL, response)
+    }
+}
 
 func cleanupPrivatePreboot() -> Bool {
     // Remove /private/preboot/tmp
