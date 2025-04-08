@@ -160,6 +160,63 @@ func doDirectInstall(_ device: Device) async -> Bool {
         trollstoreTarData = try? Data(contentsOf: docsURL.appendingPathComponent("TrollStore.tar"))
     }
     
+    if supportsFullPhysRW {
+        if device.isArm64e {
+            Logger.log("正在绕过 PPL (\(dmaFail.name))")
+            if !dmaFail.initialise() {
+                Logger.log("绕过 PPL 失败", type: .error)
+                return false
+            }
+            Logger.log("成功绕过 PPL", type: .success)
+        }
+        
+        if #available(iOS 16, *) {
+            libjailbreak_kalloc_pt_init()
+        }
+        
+        if !build_physrw_primitive() {
+            Logger.log("构建硬件读写条件失败", type: .error)
+            return false
+        }
+        
+        if device.isArm64e {
+            if !dmaFail.deinitialise() {
+                Logger.log("初始化 \(dmaFail.name) 失败", type: .error)
+                return false
+            }
+        }
+        
+        if !exploit.deinitialise() {
+            Logger.log("初始化 \(exploit.name) 失败", type: .error)
+            return false
+        }
+        
+        Logger.log("正在解除沙盒")
+        if !unsandbox() {
+            Logger.log("解除沙盒失败", type: .error)
+            return false
+        }
+        
+        Logger.log("提升权限")
+        if !get_root_pplrw() {
+            Logger.log("提升权限失败", type: .error)
+            return false
+        }
+        if !platformise() {
+            Logger.log("平台化失败", type: .error)
+            return false
+        }
+    } else {
+        
+        Logger.log("解除沙盒并提升权限中")
+        if !get_root_krw(iOS14) {
+            Logger.log("解除沙盒并提升权限失败", type: .error)
+            return false
+        }
+    }
+    
+    remount_private_preboot()
+    
     if let data = trollstoreTarData {
         do {
             try FileManager.default.createDirectory(atPath: "/private/preboot/tmp", withIntermediateDirectories: false)
@@ -189,17 +246,11 @@ func doDirectInstall(_ device: Device) async -> Bool {
         Logger.log("无法安装持久性助手", type: .error)
     }
     
-    // 显示注入的程序名称（黄色字体）
-    if let selectedApp = newCandidates.first {
-        Logger.log("正在注入到程序：\(selectedApp.displayName)", type: .warning)
-    }
-    
     Logger.log("正在安装 TrollStore")
     if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
         Logger.log("安装 TrollStore 失败", type: .error)
     } else {
-        // 安装成功提示（黄色字体）
-        Logger.log("巨魔已安装成功，返回桌面查找大头巨魔！", type: .warning)
+        Logger.log("成功安装 TrollStore！", type: .success)
     }
     
     if !cleanupPrivatePreboot() {

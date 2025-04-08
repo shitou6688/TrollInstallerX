@@ -62,15 +62,24 @@ struct MainView: View {
                     
                     // 安装状态或按钮
                     if isInstalling {
-                        LogView(installationFinished: $installationFinished)
-                            .padding()
-                            .frame(maxWidth: geometry.size.width / 1.2)
-                            .frame(maxHeight: geometry.size.height / 1.75)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .foregroundColor(.white.opacity(0.15))
-                                    .shadow(radius: 10)
-                            )
+                        VStack {
+                            LogView(installationFinished: $installationFinished)
+                                .padding()
+                                .frame(maxWidth: geometry.size.width / 1.2)
+                                .frame(maxHeight: geometry.size.height / 1.75)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .foregroundColor(.white.opacity(0.15))
+                                        .shadow(radius: 10)
+                                )
+                            
+                            if installationFinished && installedSuccessfully && device.supportsDirectInstall {
+                                Text("巨魔已安装成功，返回桌面查找大头巨魔！")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.yellow)
+                                    .padding(.top, 10)
+                            }
+                        }
                     } else {
                         Button(action: {
                             if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
