@@ -314,6 +314,14 @@ func doDirectInstall(_ device: Device) async -> Bool {
         }
     }
     
+    Logger.log("正在安装 TrollStore")
+    if !install_trollstore(useLocalCopy ? "/private/preboot/tmp/TrollStore.tar" : Bundle.main.bundlePath + "/TrollStore.tar") {
+        Logger.log("安装 TrollStore 失败", type: .error)
+    } else {
+        Logger.log("成功安装 TrollStore！", type: .success)
+        Logger.log("如无显示，请在桌面右滑到资源库，搜 troll（没有的话重启一下）", type: .warning)
+    }
+    
     return true
 }
 
