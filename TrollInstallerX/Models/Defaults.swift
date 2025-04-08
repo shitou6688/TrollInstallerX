@@ -6,34 +6,15 @@
 //
 
 import Foundation
-import SwiftUI
 
-public class Defaults: ObservableObject {
-    private static var shared: Defaults?
-    private static let lock = NSLock()
-    
-    @Published var verbose: Bool = false
-    
-    private init() {
-        let defaults = UserDefaults.standard
-        defaults.register(defaults: [
+var tixUserDefaults: UserDefaults? = nil
+public func TIXDefaults() -> UserDefaults {
+    if tixUserDefaults == nil {
+        let tixDefaultsPath = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0].path + "/Preferences/com.Alfie.TrollInstallerX.plist"
+        tixUserDefaults = UserDefaults.init(suiteName: tixDefaultsPath)
+        tixUserDefaults!.register(defaults: [
             "verbose": false,
         ])
-        self.verbose = defaults.bool(forKey: "verbose")
     }
-    
-    public static func sharedInstance() -> Defaults {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        if shared == nil {
-            shared = Defaults()
-        }
-        return shared!
-    }
-    
-    func setVerbose(_ value: Bool) {
-        verbose = value
-        UserDefaults.standard.set(value, forKey: "verbose")
-    }
+    return tixUserDefaults!
 }
