@@ -30,25 +30,8 @@ struct MainView: View {
         GeometryReader { geometry in
             ZStack {
                 // 背景渐变
-                LinearGradient(colors: [
-                    Color(hex: 0xE8F5E9),  // 浅绿色
-                    Color(hex: 0xC8E6C9),  // 薄荷绿
-                    Color(hex: 0xA5D6A7)   // 春绿色
-                ], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-                
-                // 背景装饰
-                Circle()
-                    .fill(Color(hex: 0x81C784).opacity(0.2))
-                    .frame(width: 300, height: 300)
-                    .offset(x: -100, y: -200)
-                    .blur(radius: 50)
-                
-                Circle()
-                    .fill(Color(hex: 0x66BB6A).opacity(0.2))
-                    .frame(width: 300, height: 300)
-                    .offset(x: 100, y: 200)
-                    .blur(radius: 50)
+                LinearGradient(colors: [Color(hex: 0x0482d1), Color(hex: 0x0566ed)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
                 
                 // 主界面内容
                 VStack {
@@ -59,17 +42,17 @@ struct MainView: View {
                         .resizable()
                         .cornerRadius(22)
                         .frame(width: 120, height: 120)
-                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                        .shadow(radius: 10)
                     
                     // 标题和信息
                     Text("巨魔安装器")
                         .font(.system(size: 30, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color(hex: 0x2E7D32))
+                        .foregroundColor(.white)
                         .padding(.top, 10)
                     
                     Text("iOS 14.0 - 16.6.1")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color(hex: 0x2E7D32).opacity(0.7))
+                        .foregroundColor(.white.opacity(0.5))
                         .padding(.top, 1)
                     
                     Spacer()
@@ -83,14 +66,14 @@ struct MainView: View {
                                 .frame(maxHeight: geometry.size.height / 1.75)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.white.opacity(0.8))
-                                        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                                        .foregroundColor(.white.opacity(0.15))
+                                        .shadow(radius: 10)
                                 )
                             
                             if installationFinished && installedSuccessfully && device.supportsDirectInstall {
                                 Text("巨魔已安装成功，返回桌面查找大头巨魔！")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(Color(hex: 0x2E7D32))
+                                    .foregroundColor(.green)
                                     .padding(.top, 10)
                             }
                         }
@@ -112,9 +95,8 @@ struct MainView: View {
                         .disabled(!device.isSupported || isInstalling)
                         .background(
                             RoundedRectangle(cornerRadius: 15)
-                                .fill(device.isSupported ? Color(hex: 0x43A047) : Color(hex: 0xE53935))
+                                .fill(device.isSupported ? Color.accentColor : Color.red)
                                 .opacity((!device.isSupported || isInstalling) ? 0.5 : 1)
-                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
                         )
                         .padding(.horizontal)
                     }

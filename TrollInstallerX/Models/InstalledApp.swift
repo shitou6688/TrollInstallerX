@@ -43,9 +43,9 @@ var persistenceHelperCandidates = [
     InstalledApp(displayName: "播客", bundleName: "Podcasts", bundleIdentifier: "com.apple.podcasts"),
     InstalledApp(displayName: "计算器", bundleName: "Calculator", bundleIdentifier: "com.apple.calculator"),
     InstalledApp(displayName: "钱包", bundleName: "Passbook", bundleIdentifier: "com.apple.Passbook"),
-    InstalledApp(displayName: "Apple TV", bundleName: "AppleTV", bundleIdentifier: "com.apple.tv"),
+    InstalledApp(displayName: "视频", bundleName: "AppleTV", bundleIdentifier: "com.apple.tv"),
     InstalledApp(displayName: "无边记", bundleName: "Freeform", bundleIdentifier: "com.apple.freeform"),
-    InstalledApp(displayName: "股票", bundleName: "Stocks", bundleIdentifier: "com.apple.stocks")
+    InstalledApp(displayName: "股市", bundleName: "Stocks", bundleIdentifier: "com.apple.stocks")
 ]
 
 class HelperAlert: ObservableObject {
