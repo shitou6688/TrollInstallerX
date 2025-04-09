@@ -89,21 +89,19 @@ struct MainView: View {
                                 }
                             }
                         }, label: {
-                            HStack {
-                                Image(systemName: "arrow.clockwise.circle")
-                                    .font(.system(size: 18))
-                                Text("开始安装")
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            }
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(width: geometry.size.width - 80)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .foregroundColor(.white.opacity(0.15))
-                            )
+                            Text(device.isSupported ? "开始安装" : "您的设备暂不支持！")
+                                .font(.system(size: 20, weight: .regular, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
                         })
-                        .disabled(!device.isSupported)
+                        .disabled(!device.isSupported || isInstalling)
+                        .background(
+                            RoundedRectangle(cornerRadius: 15)
+                                .fill(device.isSupported ? Color.accentColor : Color.red)
+                                .opacity((!device.isSupported || isInstalling) ? 0.5 : 1)
+                        )
+                        .padding(.horizontal)
                     }
                     
                     Spacer().frame(height: 40)
