@@ -18,7 +18,7 @@ func checkForMDCUnsandbox() -> Bool {
 }
 
 func getKernel(_ device: Device) -> Bool {
-    Logger.log("正在下载内核，请稍等...")
+    Logger.log("正在下载内核(不要切屏)请稍等...")
     
     // 创建一个信号量，用于控制超时
     let semaphore = DispatchSemaphore(value: 0)

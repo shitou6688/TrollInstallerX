@@ -611,7 +611,6 @@
 			isa = PBXGroup;
 			children = (
 				319C8F8B2BB8AFBE00E19B34 /* TrollStore.tar */,
-				/* 在这里添加你的dylib文件 */
 			);
 			path = Resources;
 			sourceTree = "<group>";
