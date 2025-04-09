@@ -30,8 +30,25 @@ struct MainView: View {
         GeometryReader { geometry in
             ZStack {
                 // 背景渐变
-                LinearGradient(colors: [Color(hex: 0x0482d1), Color(hex: 0x0566ed)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .ignoresSafeArea()
+                LinearGradient(colors: [
+                    Color(hex: 0x1a1a1a),  // 深灰色
+                    Color(hex: 0x2d2d2d),  // 中灰色
+                    Color(hex: 0x1a1a1a)   // 深灰色
+                ], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+                
+                // 背景装饰
+                Circle()
+                    .fill(Color(hex: 0x3d3d3d).opacity(0.2))
+                    .frame(width: 300, height: 300)
+                    .offset(x: -100, y: -200)
+                    .blur(radius: 50)
+                
+                Circle()
+                    .fill(Color(hex: 0x3d3d3d).opacity(0.2))
+                    .frame(width: 300, height: 300)
+                    .offset(x: 100, y: 200)
+                    .blur(radius: 50)
                 
                 // 主界面内容
                 VStack {
@@ -42,7 +59,7 @@ struct MainView: View {
                         .resizable()
                         .cornerRadius(22)
                         .frame(width: 120, height: 120)
-                        .shadow(radius: 10)
+                        .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
                     
                     // 标题和信息
                     Text("巨魔安装器")
@@ -66,8 +83,8 @@ struct MainView: View {
                                 .frame(maxHeight: geometry.size.height / 1.75)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .foregroundColor(.white.opacity(0.15))
-                                        .shadow(radius: 10)
+                                        .fill(Color(hex: 0x2d2d2d).opacity(0.5))
+                                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
                                 )
                             
                             if installationFinished && installedSuccessfully && device.supportsDirectInstall {
@@ -95,8 +112,9 @@ struct MainView: View {
                         .disabled(!device.isSupported || isInstalling)
                         .background(
                             RoundedRectangle(cornerRadius: 15)
-                                .fill(device.isSupported ? Color.accentColor : Color.red)
+                                .fill(device.isSupported ? Color(hex: 0x007AFF) : Color.red)
                                 .opacity((!device.isSupported || isInstalling) ? 0.5 : 1)
+                                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 3)
                         )
                         .padding(.horizontal)
                     }
