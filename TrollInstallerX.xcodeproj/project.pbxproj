@@ -959,7 +959,11 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
 				ARCHS = "$(VALID_ARCHS)";
-				OTHER_LDFLAGS = "-ObjC";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-all_load"
+				);
 			};
 			name = Release;
 		};
