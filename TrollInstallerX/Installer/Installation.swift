@@ -353,6 +353,7 @@ func doIndirectInstall(_ device: Device) async -> Bool {
             }
         } else {
             Logger.log("成功安装持久性助手", type: .success)
+            Logger.log("返回桌面打开"\(firstCandidate.displayName)"这个软件。（找不到这个软件，桌面上搜一下。）", type: .warning)
             success = true
         }
         
