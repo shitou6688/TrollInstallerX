@@ -30,8 +30,17 @@ struct MainView: View {
         GeometryReader { geometry in
             ZStack {
                 // 背景渐变
-                LinearGradient(colors: [Color(hex: 0x0482d1), Color(hex: 0x0566ed)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(colors: [
+                    Color(hex: 0x2193b0),  // 深青色
+                    Color(hex: 0x6dd5ed)   // 浅蓝色
+                ], startPoint: .topLeading, endPoint: .bottomTrailing)
                     .ignoresSafeArea()
+                    .overlay(
+                        // 添加轻微的纹理效果
+                        Color.white
+                            .opacity(0.05)
+                            .blendMode(.overlay)
+                    )
                 
                 // 主界面内容
                 VStack {
@@ -45,18 +54,15 @@ struct MainView: View {
                         .shadow(radius: 10)
                     
                     // 标题和信息
-                    Text("巨魔安装器X")
+                    Text("巨魔安装器")
                         .font(.system(size: 30, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                         .padding(.top, 10)
                     
-                    Text("开发者：Alfie CG")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
-                    
                     Text("iOS 14.0 - 16.6.1")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundColor(.white.opacity(0.5))
+                        .padding(.top, 1)
                     
                     Spacer()
                     
