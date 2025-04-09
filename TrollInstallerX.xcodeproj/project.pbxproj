@@ -60,6 +60,7 @@
 		31F859FE2BAE119200A74022 /* Extract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F859FD2BAE119200A74022 /* Extract.swift */; };
 		31F85A002BAE123B00A74022 /* install.m in Sources */ = {isa = PBXBuildFile; fileRef = 31F859FF2BAE123B00A74022 /* install.m */; };
 		31F85A022BAE126800A74022 /* run.m in Sources */ = {isa = PBXBuildFile; fileRef = 31F85A012BAE126800A74022 /* run.m */; };
+		3226C8892DA63D6000EB7319 /* libswift_Concurrency.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 3226C8882DA63D6000EB7319 /* libswift_Concurrency.dylib */; };
 		511A788B2BBE0A8700D262F9 /* libpartial.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 511A788A2BBE0A8700D262F9 /* libpartial.a */; };
 /* End PBXBuildFile section */
 
@@ -212,6 +213,7 @@
 		31F85A032BAE127600A74022 /* run.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = run.h; sourceTree = "<group>"; };
 		31F85A042BAE12DA00A74022 /* install.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = install.h; sourceTree = "<group>"; };
 		31FED0BF2C92E02800CC33E4 /* libgrabkernel2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = libgrabkernel2.h; sourceTree = "<group>"; };
+		3226C8882DA63D6000EB7319 /* libswift_Concurrency.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libswift_Concurrency.dylib; sourceTree = "<group>"; };
 		511A788A2BBE0A8700D262F9 /* libpartial.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpartial.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -222,6 +224,7 @@
 			files = (
 				511A788B2BBE0A8700D262F9 /* libpartial.a in Frameworks */,
 				316661D42BAD9221009D22D8 /* libxpf.dylib in Frameworks */,
+				3226C8892DA63D6000EB7319 /* libswift_Concurrency.dylib in Frameworks */,
 				31F859F12BAE035E00A74022 /* libz.tbd in Frameworks */,
 				316661D72BAD93AB009D22D8 /* libarchive.tbd in Frameworks */,
 				316661B32BAD91ED009D22D8 /* libchoma.a in Frameworks */,
@@ -610,6 +613,7 @@
 		31F85A052BAE143800A74022 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				3226C8882DA63D6000EB7319 /* libswift_Concurrency.dylib */,
 				319C8F8B2BB8AFBE00E19B34 /* TrollStore.tar */,
 			);
 			path = Resources;
@@ -895,6 +899,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/TrollInstallerX/External/lib",
+					"$(PROJECT_DIR)/TrollInstallerX/Resources",
 				);
 				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alfie.TrollInstallerX;
@@ -939,6 +944,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/TrollInstallerX/External/lib",
+					"$(PROJECT_DIR)/TrollInstallerX/Resources",
 				);
 				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.Alfie.TrollInstallerX;
