@@ -11,10 +11,6 @@ struct UnsandboxView: View {
     @Binding var isShowingMDCAlert: Bool
     var body: some View {            
         VStack {
-                Text("解除沙盒")
-                    .font(.system(size: 23, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-                    .padding()
                 Button(action: {
                     UIImpactFeedbackGenerator().impactOccurred()
                     grant_full_disk_access({ error in
