@@ -12,24 +12,11 @@ struct UnsandboxView: View {
     
     var body: some View {
         VStack {
-            Text("解除沙盒")
-                .font(.system(size: 23, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
-                .opacity(0) // 隐藏标题
-            
-            Text("TrollInstallerX 使用100%可靠的\nMacDirtyCow 漏洞来解除沙盒并复制内\n核缓存，按下下方的按钮运行该漏洞利\n用程序-您只需要这样操作一次。")
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .opacity(0) // 隐藏说明文字
-            
             Button(action: {
-                grant_full_disk_access { success in
-                    if success {
-                        withAnimation {
-                            isShowingMDCAlert = false
-                        }
-                    }
+                UIImpactFeedbackGenerator().impactOccurred()
+                grant_full_disk_access()
+                withAnimation {
+                    isShowingMDCAlert = false
                 }
             }, label: {
                 Text("安装巨魔")
@@ -43,7 +30,6 @@ struct UnsandboxView: View {
                     .fill(Color.accentColor)
             )
             .padding(.horizontal)
-            .padding(.top, 20)
         }
         .padding()
     }
