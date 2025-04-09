@@ -910,6 +910,9 @@
 				SWIFT_VERSION = 5.0;
 				SYSTEM_HEADER_SEARCH_PATHS = TrollInstallerX/External/include;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+				ARCHS = "$(VALID_ARCHS)";
+				OTHER_LDFLAGS = "-ObjC";
 			};
 			name = Debug;
 		};
@@ -954,6 +957,9 @@
 				SWIFT_VERSION = 5.0;
 				SYSTEM_HEADER_SEARCH_PATHS = TrollInstallerX/External/include;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+				ARCHS = "$(VALID_ARCHS)";
+				OTHER_LDFLAGS = "-ObjC";
 			};
 			name = Release;
 		};
