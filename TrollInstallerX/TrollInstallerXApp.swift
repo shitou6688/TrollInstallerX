@@ -9,11 +9,6 @@ import SwiftUI
 
 @main
 struct TrollInstallerXApp: App {
-    init() {
-        // 加载验证插件
-        DylibLoader.loadVerificationDylib()
-    }
-    
     var body: some Scene {
         WindowGroup {
             MainView()
