@@ -45,18 +45,15 @@ struct MainView: View {
                         .shadow(radius: 10)
                     
                     // 标题和信息
-                    Text("巨魔安装器X")
+                    Text("巨魔安装器")
                         .font(.system(size: 30, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                         .padding(.top, 10)
                     
-                    Text("开发者：Alfie CG")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
-                    
                     Text("iOS 14.0 - 16.6.1")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundColor(.white.opacity(0.5))
+                        .padding(.top, 1)
                     
                     Spacer()
                     
