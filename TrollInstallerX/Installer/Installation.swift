@@ -20,18 +20,27 @@ func checkForMDCUnsandbox() -> Bool {
 func getKernel(_ device: Device) -> Bool {
     Logger.log("正在下载内核(不要切屏)请稍等...")
     
-    // 创建一个信号量，用于控制超时
-    let semaphore = DispatchSemaphore(value: 0)
+    let fileManager = FileManager.default
     var kernelDownloaded = false
-    
-    // 超时提示
-    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { // 2分钟
-        if !kernelDownloaded {
-            Logger.log("长时间无响应，请关机重启一下，或者换流量再来点。", type: .warning)
-        }
-    }
+    var lastAttemptTime = Date()
+    var hasPrompted = false
     
     while true {  // 持续尝试直到成功
+        // 超时1分钟，提示用户刷新网络，并重置计时
+        if Date().timeIntervalSince(lastAttemptTime) > 60 {
+            if !hasPrompted {
+                DispatchQueue.main.async {
+                    let alert = UIAlertController(title: "网络超时", message: "下载内核超时，请尝试切换飞行模式或更换网络后点击继续。", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "继续重试", style: .default, handler: nil))
+                    // 由于此处可能无视图控制器，实际项目中应由上层UI负责present弹窗，这里为伪代码
+                    UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
+                }
+                Logger.log("下载内核超时，已提示用户刷新网络。", type: .warning)
+                hasPrompted = true
+            }
+            lastAttemptTime = Date() // 重置计时，继续重试
+        }
+
         if fileManager.fileExists(atPath: kernelPath) {
             Logger.log("内核缓存已存在")
             kernelDownloaded = true
@@ -71,11 +80,14 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         // 尝试下载内核
+        lastAttemptTime = Date() // 每次尝试前重置计时
+        hasPrompted = false // 每次新尝试前允许再次提示
         if grab_kernelcache(kernelPath) {
             Logger.log("内核下载成功")
             kernelDownloaded = true
             return true
         }
+        // 若失败则循环重试
     }
 }
 
