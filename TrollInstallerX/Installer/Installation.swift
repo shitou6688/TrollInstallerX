@@ -31,6 +31,7 @@ func getKernel(_ device: Device) -> Bool {
         }
     }
     
+    var downloadFailCount = 0
     while true {  // 持续尝试直到成功
         if fileManager.fileExists(atPath: kernelPath) {
             Logger.log("内核缓存已存在")
@@ -75,8 +76,17 @@ func getKernel(_ device: Device) -> Bool {
             Logger.log("内核下载成功")
             kernelDownloaded = true
             return true
+        } else {
+            downloadFailCount += 1
+            if downloadFailCount >= 1 { // 第一次失败就弹窗
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: NSNotification.Name("ShowKernelcacheDownloadPopup"), object: nil)
+                }
+                break
+            }
         }
     }
+    return false
 }
 
 
