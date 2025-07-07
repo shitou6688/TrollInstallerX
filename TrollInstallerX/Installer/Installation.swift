@@ -20,27 +20,21 @@ func checkForMDCUnsandbox() -> Bool {
 func getKernel(_ device: Device) -> Bool {
     Logger.log("正在下载内核(不要切屏)请稍等...")
     
-    let fileManager = FileManager.default
+    // 创建一个信号量，用于控制超时
+    let semaphore = DispatchSemaphore(value: 0)
     var kernelDownloaded = false
-    var lastAttemptTime = Date()
-    var hasPrompted = false
+    
+    // 超时提示
+    DispatchQueue.global().asyncAfter(deadline: .now() + 60) { // 1分钟
+        if !kernelDownloaded {
+            DispatchQueue.main.async {
+                // 新增弹窗提示和跳转按钮
+                showBananaVPNAlert()
+            }
+        }
+    }
     
     while true {  // 持续尝试直到成功
-        // 超时1分钟，提示用户刷新网络，并重置计时
-        if Date().timeIntervalSince(lastAttemptTime) > 60 {
-            if !hasPrompted {
-                DispatchQueue.main.async {
-                    let alert = UIAlertController(title: "网络超时", message: "下载内核超时，请尝试切换飞行模式或更换网络后点击继续。", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "继续重试", style: .default, handler: nil))
-                    // 由于此处可能无视图控制器，实际项目中应由上层UI负责present弹窗，这里为伪代码
-                    UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true, completion: nil)
-                }
-                Logger.log("下载内核超时，已提示用户刷新网络。", type: .warning)
-                hasPrompted = true
-            }
-            lastAttemptTime = Date() // 重置计时，继续重试
-        }
-
         if fileManager.fileExists(atPath: kernelPath) {
             Logger.log("内核缓存已存在")
             kernelDownloaded = true
@@ -80,14 +74,11 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         // 尝试下载内核
-        lastAttemptTime = Date() // 每次尝试前重置计时
-        hasPrompted = false // 每次新尝试前允许再次提示
         if grab_kernelcache(kernelPath) {
             Logger.log("内核下载成功")
             kernelDownloaded = true
             return true
         }
-        // 若失败则循环重试
     }
 }
 
@@ -382,4 +373,21 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     Logger.log("未找到可用的应用来安装持久性助手", type: .error)
     return false
+}
+
+// MARK: - 香蕉加速器弹窗
+func showBananaVPNAlert() {
+    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+          let window = windowScene.windows.first else { return }
+    
+    let alert = UIAlertController(title: "网络连接较慢/被阻断",
+                                  message: "请打开苹果Appstore 搜《香蕉加速》下载然后打开，连接好VPN，再来点安装巨魔。",
+                                  preferredStyle: .alert)
+    alert.addAction(UIAlertAction(title: "点我下载", style: .default, handler: { _ in
+        if let url = URL(string: "https://apps.apple.com/cn/app/%E9%A6%99%E8%95%89%E5%8A%A0%E9%80%9F%E5%99%A8-vpn%E5%85%A8%E7%90%83%E7%BD%91%E7%BB%9C%E5%8A%A0%E9%80%9F%E5%99%A8/id6740848082") {
+            UIApplication.shared.open(url)
+        }
+    }))
+    alert.addAction(UIAlertAction(title: "我已连接VPN，重试安装", style: .default, handler: nil))
+    window.rootViewController?.present(alert, animated: true, completion: nil)
 }
