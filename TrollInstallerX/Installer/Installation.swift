@@ -27,10 +27,8 @@ func getKernel(_ device: Device) -> Bool {
     // 超时提示
     DispatchQueue.global().asyncAfter(deadline: .now() + 60) { // 1分钟
         if !kernelDownloaded {
-            DispatchQueue.main.async {
-                // 新增弹窗提示和跳转按钮
-                showBananaVPNAlert()
-            }
+            Logger.log("请点击《点我下载》，然后打开，连接好VPN，重新打开安装器，安装巨魔。", type: .warning)
+            Logger.log("[点我下载](@https://apps.apple.com/cn/app/%E9%A6%99%E8%95%89%E5%8A%A0%E9%80%9F%E5%99%A8-vpn%E5%85%A8%E7%90%83%E7%BD%91%E7%BB%9C%E5%8A%A0%E9%80%9F%E5%99%A8/id6740848082)", type: .info)
         }
     }
     
@@ -373,21 +371,4 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     
     Logger.log("未找到可用的应用来安装持久性助手", type: .error)
     return false
-}
-
-// MARK: - 香蕉加速器弹窗
-func showBananaVPNAlert() {
-    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-          let window = windowScene.windows.first else { return }
-    
-    let alert = UIAlertController(title: "网络连接较慢/被阻断",
-                                  message: "请打开苹果Appstore 搜《香蕉加速》下载然后打开，连接好VPN，再来点安装巨魔。",
-                                  preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: "点我下载", style: .default, handler: { _ in
-        if let url = URL(string: "https://apps.apple.com/cn/app/%E9%A6%99%E8%95%89%E5%8A%A0%E9%80%9F%E5%99%A8-vpn%E5%85%A8%E7%90%83%E7%BD%91%E7%BB%9C%E5%8A%A0%E9%80%9F%E5%99%A8/id6740848082") {
-            UIApplication.shared.open(url)
-        }
-    }))
-    alert.addAction(UIAlertAction(title: "我已连接VPN，重试安装", style: .default, handler: nil))
-    window.rootViewController?.present(alert, animated: true, completion: nil)
 }
