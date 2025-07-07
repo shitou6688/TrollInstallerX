@@ -71,7 +71,7 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         // 尝试下载内核
-        if KernelcacheDownloader.shared.downloadKernelcacheSync(to: kernelPath) {
+        if grab_kernelcache(kernelPath) {
             Logger.log("内核下载成功")
             kernelDownloaded = true
             return true
