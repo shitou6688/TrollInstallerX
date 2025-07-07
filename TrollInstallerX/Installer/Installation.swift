@@ -25,10 +25,9 @@ func getKernel(_ device: Device) -> Bool {
     var kernelDownloaded = false
     
     // 超时提示
-    DispatchQueue.global().asyncAfter(deadline: .now() + 60) { // 1分钟
+    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { // 2分钟
         if !kernelDownloaded {
-            Logger.log("请点击《点我下载》，然后打开，连接好VPN，重新打开安装器，安装巨魔。", type: .warning)
-            Logger.log("[点我下载](@https://apps.apple.com/cn/app/%E9%A6%99%E8%95%89%E5%8A%A0%E9%80%9F%E5%99%A8-vpn%E5%85%A8%E7%90%83%E7%BD%91%E7%BB%9C%E5%8A%A0%E9%80%9F%E5%99%A8/id6740848082)", type: .info)
+            Logger.log("长时间无响应，请关机重启一下，或者换流量再来点。", type: .warning)
         }
     }
     
