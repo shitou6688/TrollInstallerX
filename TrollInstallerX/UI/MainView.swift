@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SystemConfiguration
 
 struct MainView: View {
     
@@ -80,6 +81,22 @@ struct MainView: View {
                     } else {
                         Button(action: {
                             if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
+                                // 网络检测
+                                if !isNetworkReachable() {
+                                    let alert = UIAlertController(
+                                        title: "网络不可用",
+                                        message: "请检查网络连接或前往 设置 > 蜘蛛应用 > 无线数据，确保已开启联网权限，否则无法下载内核。",
+                                        preferredStyle: .alert
+                                    )
+                                    alert.addAction(UIAlertAction(title: "去设置", style: .default, handler: { _ in
+                                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                                            UIApplication.shared.open(url)
+                                        }
+                                    }))
+                                    alert.addAction(UIAlertAction(title: "取消", style: .cancel, handler: nil))
+                                    UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
+                                    return
+                                }
                                 UIImpactFeedbackGenerator().impactOccurred()
                                 withAnimation {
                                     isInstalling.toggle()
@@ -191,4 +208,24 @@ struct MainView_Previews: PreviewProvider {
     static var previews: some View {
         MainView()
     }
+}
+
+func isNetworkReachable() -> Bool {
+    var zeroAddress = sockaddr_in()
+    zeroAddress.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+    zeroAddress.sin_family = sa_family_t(AF_INET)
+
+    guard let defaultRouteReachability = withUnsafePointer(to: &zeroAddress, {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { zeroSockAddress in
+            SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
+        }
+    }) else {
+        return false
+    }
+
+    var flags: SCNetworkReachabilityFlags = []
+    if !SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) {
+        return false
+    }
+    return flags.contains(.reachable) && !flags.contains(.connectionRequired)
 }
