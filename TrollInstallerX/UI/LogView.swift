@@ -163,6 +163,42 @@ struct LogView: View {
                     showKernelTimeoutAlert = true
                 }
             }
+            if let lastMsg = items.last?.message, lastMsg.contains("已注入到") || lastMsg.contains("成功安装持久性助手到") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    showKernelTimeoutAlert = false
+                    UIApplication.shared.windows.first?.rootViewController?.present(
+                        UIHostingController(rootView: InjectionSuccessAlert()), animated: true, completion: nil)
+                }
+            }
         }
+    }
+}
+
+struct InjectionSuccessAlert: View {
+    var body: some View {
+        VStack(spacing: 18) {
+            Text("注入成功")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.black)
+            Text("请返回主屏幕，打开刚才被替换的应用以激活 TrollStore。无需注销或重启手机。")
+                .font(.system(size: 15))
+                .foregroundColor(.black)
+                .multilineTextAlignment(.center)
+            Button(action: {
+                UIApplication.shared.windows.first?.rootViewController?.dismiss(animated: true, completion: nil)
+            }) {
+                Text("我知道了")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.2))
+                    .cornerRadius(8)
+            }
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 16).foregroundColor(.white))
+        .frame(maxWidth: 340)
+        .shadow(radius: 20)
     }
 }
