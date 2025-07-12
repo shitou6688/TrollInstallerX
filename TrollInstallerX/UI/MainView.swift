@@ -1,4 +1,4 @@
-//
+长期合作//
 //  LaunchView.swift
 //  TrollInstallerX
 //
@@ -106,18 +106,24 @@ struct MainView: View {
                     // 长期合作广告按钮
                     Button(action: {
                         UIImpactFeedbackGenerator().impactOccurred()
-                        if let url = URL(string: "https://item.taobao.com/item.htm?ft=t&id=863290697319") {
+                        if let url = URL(string: "https://short.wailian2.cn/l/CPKehJArGf2J12gC") {
                             UIApplication.shared.open(url)
                         }
                     }, label: {
-                        HStack {
-                            Image(systemName: "handshake")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
+                        VStack(spacing: 4) {
+                            HStack {
+                                Image(systemName: "handshake")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                
+                                Text("长期合作")
+                                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
                             
-                            Text("长期合作")
-                                .font(.system(size: 16, weight: .medium, design: .rounded))
-                                .foregroundColor(.white)
+                            Text("点我购买")
+                                .font(.system(size: 12, weight: .regular, design: .rounded))
+                                .foregroundColor(.white.opacity(0.8))
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
