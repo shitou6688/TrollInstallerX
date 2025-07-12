@@ -110,20 +110,14 @@ struct MainView: View {
                             UIApplication.shared.open(url)
                         }
                     }, label: {
-                        VStack(spacing: 4) {
-                            HStack {
-                                Image(systemName: "handshake")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.white)
-                                
-                                Text("长期合作")
-                                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white)
-                            }
+                        HStack {
+                            Image(systemName: "handshake")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
                             
-                            Text("点我购买")
-                                .font(.system(size: 12, weight: .regular, design: .rounded))
-                                .foregroundColor(.white.opacity(0.8))
+                            Text("长期合作点我购买")
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
