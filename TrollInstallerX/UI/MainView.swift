@@ -115,7 +115,7 @@ struct MainView: View {
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white)
                             
-                            Text("长期合作点我购买")
+                            Text("长期合作")
                                 .font(.system(size: 16, weight: .medium, design: .rounded))
                                 .foregroundColor(.white)
                         }
