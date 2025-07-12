@@ -37,10 +37,11 @@ struct CreditsView: View {
                 .foregroundColor(.white)
                 .padding()
             HStack {
+                let split = credits.count / 2
                 VStack {
                     
                     VStack(spacing: 3) {
-                        ForEach(0..<(credits.count / 2)) { index in
+                        ForEach(0..<split, id: \.self) { index in
                             CreditRow(credit: credits[index])
                         }
                     }
@@ -49,7 +50,7 @@ struct CreditsView: View {
                 VStack {
                     
                     VStack(spacing: 3) {
-                        ForEach((credits.count / 2)..<credits.count) { index in
+                        ForEach(split..<credits.count, id: \.self) { index in
                             CreditRow(credit: credits[index])
                         }
                     }
