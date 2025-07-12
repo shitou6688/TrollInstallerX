@@ -37,26 +37,6 @@ struct CreditsView: View {
                 .foregroundColor(.white)
                 .padding()
             
-            // 广告按钮
-            Link(destination: URL(string: "https://short.wailian2.cn/l/CPKehJArGf2J12gC")!) {
-                HStack {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.yellow)
-                    Text("长期合作点我购买")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.white)
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.orange.opacity(0.8))
-                        .shadow(radius: 5)
-                )
-            }
-            .padding(.bottom, 10)
-            
             HStack {
                 VStack {
                     

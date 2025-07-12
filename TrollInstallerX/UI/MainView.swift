@@ -99,6 +99,28 @@ struct MainView: View {
                                 .opacity((!device.isSupported || isInstalling) ? 0.5 : 1)
                         )
                         .padding(.horizontal)
+                        
+                        // 广告按钮
+                        Link(destination: URL(string: "https://short.wailian2.cn/l/CPKehJArGf2J12gC")!) {
+                            HStack {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.yellow)
+                                Text("长期合作点我购买")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.white)
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 15)
+                                .fill(Color.orange.opacity(0.8))
+                                .shadow(radius: 5)
+                        )
+                        .padding(.horizontal)
+                        .padding(.top, 10)
                     }
                     
                     Spacer().frame(height: 40)
