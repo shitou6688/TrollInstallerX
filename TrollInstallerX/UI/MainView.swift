@@ -101,7 +101,36 @@ struct MainView: View {
                         .padding(.horizontal)
                     }
                     
-                    Spacer().frame(height: 40)
+                    Spacer().frame(height: 20)
+                    
+                    // 长期合作广告按钮
+                    Button(action: {
+                        UIImpactFeedbackGenerator().impactOccurred()
+                        if let url = URL(string: "https://item.taobao.com/item.htm?ft=t&id=863290697319") {
+                            UIApplication.shared.open(url)
+                        }
+                    }, label: {
+                        HStack {
+                            Image(systemName: "handshake")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                            
+                            Text("长期合作")
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.white.opacity(0.2))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                    })
+                    .padding(.bottom, 20)
                 }
                 .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
