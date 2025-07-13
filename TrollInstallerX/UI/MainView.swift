@@ -28,16 +28,41 @@ class WeChatManager: ObservableObject {
     }
     
     func addWeChatFriend(wechatID: String) {
-        // 方式2：添加微信好友（需要替换为实际的微信ID）
-        let wechatAddURL = URL(string: "weixin://dl/business/?t=\(wechatID)")
-        let wechatURL = URL(string: "weixin://")
+        // 多种微信跳转方式
+        let wechatURLs = [
+            "weixin://",
+            "weixin://dl/business/?t=\(wechatID)",
+            "weixin://dl/contacts/?t=\(wechatID)",
+            "weixin://dl/addfriend/?t=\(wechatID)"
+        ]
         
-        if let addURL = wechatAddURL, UIApplication.shared.canOpenURL(wechatURL!) {
-            UIApplication.shared.open(addURL)
+        // 检查微信是否安装
+        if let wechatURL = URL(string: "weixin://") {
+            if UIApplication.shared.canOpenURL(wechatURL) {
+                // 尝试多种跳转方式
+                for urlString in wechatURLs {
+                    if let url = URL(string: urlString) {
+                        UIApplication.shared.open(url, options: [:]) { success in
+                            if success {
+                                return
+                            }
+                        }
+                    }
+                }
+                
+                // 如果直接跳转失败，显示二维码
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.showAlert(title: "跳转失败", message: "请长按按钮查看二维码添加微信好友")
+                }
+            } else {
+                // 微信未安装，跳转到App Store
+                if let appStoreURL = URL(string: "https://apps.apple.com/cn/app/wechat/id414478124") {
+                    UIApplication.shared.open(appStoreURL)
+                }
+            }
         } else {
             // 备用方案：复制微信号到剪贴板
             UIPasteboard.general.string = wechatID
-            // 显示提示
             showAlert(title: "微信号已复制", message: "微信号 \(wechatID) 已复制到剪贴板，请手动添加")
         }
     }
@@ -175,12 +200,12 @@ struct MainView: View {
                         
                         // 微信联系按钮
                         Button(action: {
-                            WeChatManager.shared.addWeChatFriend(wechatID: "jumo668888") // 替换为您的微信号
+                            isShowingQRCode = true
                         }) {
                             HStack {
                                 Image(systemName: "message.fill")
                                     .foregroundColor(.green)
-                                Text("添加微信联系")
+                                Text("扫描二维码添加微信")
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .foregroundColor(.white)
                                 Image(systemName: "chevron.right")
@@ -188,9 +213,6 @@ struct MainView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
-                        }
-                        .onLongPressGesture {
-                            isShowingQRCode = true
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 15)
@@ -329,6 +351,14 @@ struct WeChatQRCodeView: View {
             }
             .padding()
             .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            
+            Button("尝试直接跳转微信") {
+                WeChatManager.shared.addWeChatFriend(wechatID: wechatID)
+            }
+            .padding()
+            .background(Color.green)
             .foregroundColor(.white)
             .cornerRadius(10)
             
