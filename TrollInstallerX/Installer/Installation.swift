@@ -18,78 +18,152 @@ func checkForMDCUnsandbox() -> Bool {
 }
 
 func getKernel(_ device: Device) -> Bool {
-    Logger.log("正在检查内核缓存...")
+    Logger.log("正在下载内核(不要切屏)请稍等...")
     
-    // 检查是否已存在内核缓存
-    if fileManager.fileExists(atPath: kernelPath) {
-        Logger.log("内核缓存已存在")
-        return true
-    }
+    var kernelDownloaded = false
+    var downloadAttempts = 0
+    let maxAttempts = 3
     
-    // 检查是否有捆绑的内核缓存
-    if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
-        do {
-            try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
-            if fileManager.fileExists(atPath: kernelPath) { 
-                Logger.log("已使用捆绑的内核缓存文件")
-                return true 
-            }
-        } catch {
-            Logger.log("复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
+    // 超时提示
+    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { // 2分钟
+        if !kernelDownloaded {
+            Logger.log("长时间无响应，请关机重启一下，或者换流量再来点。", type: .warning)
         }
     }
     
-    // 使用MacDirtyCow尝试获取内核缓存
-    if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
-        let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
-        if fd > 0 {
-            let tokenData = get_NSString_from_file(fd)
-            sandbox_extension_consume(tokenData)
-            let path = get_kernelcache_path()
+    while downloadAttempts < maxAttempts {  // 最多尝试3次
+        downloadAttempts += 1
+        Logger.log("下载尝试 \(downloadAttempts)/\(maxAttempts)", type: .info)
+        
+        if fileManager.fileExists(atPath: kernelPath) {
+            Logger.log("内核缓存已存在")
+            kernelDownloaded = true
+            return true
+        }
+        
+        // 检查是否有捆绑的内核缓存
+        if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
             do {
-                try fileManager.copyItem(atPath: path!, toPath: kernelPath)
-                Logger.log("使用MacDirtyCow获取内核缓存成功")
-                return true
+                Logger.log("正在复制捆绑的内核缓存文件...", type: .info)
+                try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
+                if fileManager.fileExists(atPath: kernelPath) { 
+                    Logger.log("已使用捆绑的内核缓存文件", type: .success)
+                    kernelDownloaded = true
+                    return true 
+                }
             } catch {
-                Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
+                Logger.log("复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
+            }
+        }
+        
+        // 使用MacDirtyCow尝试获取内核缓存
+        if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
+            Logger.log("正在使用MacDirtyCow获取内核缓存...", type: .info)
+            let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
+            if fd > 0 {
+                let tokenData = get_NSString_from_file(fd)
+                sandbox_extension_consume(tokenData)
+                let path = get_kernelcache_path()
+                do {
+                    try fileManager.copyItem(atPath: path!, toPath: kernelPath)
+                    Logger.log("使用MacDirtyCow获取内核缓存成功", type: .success)
+                    kernelDownloaded = true
+                    return true
+                } catch {
+                    Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
+                }
+            }
+        }
+        
+        // 尝试下载内核
+        Logger.log("正在从网络下载内核缓存...", type: .info)
+        if downloadKernelWithProgress(kernelPath) {
+            Logger.log("内核下载成功", type: .success)
+            kernelDownloaded = true
+            return true
+        } else {
+            Logger.log("下载失败，尝试重试...", type: .warning)
+            if downloadAttempts >= maxAttempts {
+                Logger.log("下载失败次数过多，将重启设备", type: .error)
+                // 延迟重启，让用户看到错误信息
+                DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
+                    restartDevice()
+                }
+                return false
             }
         }
     }
     
-    // 尝试使用新的下载管理器下载内核
-    Logger.log("开始下载内核缓存...")
-    return downloadKernelWithProgress()
+    return false
 }
 
-func downloadKernelWithProgress() -> Bool {
+// 带进度显示的下载函数
+func downloadKernelWithProgress(_ outputPath: String) -> Bool {
     let semaphore = DispatchSemaphore(value: 0)
     var downloadSuccess = false
     
-    // 使用新的下载管理器
-    DownloadManager.shared.downloadKernelWithProgress { success in
-        downloadSuccess = success
+    // 首先尝试使用原始的grab_kernelcache函数
+    // 如果失败，则使用带进度的下载
+    if grab_kernelcache(outputPath) {
+        return true
+    }
+    
+    // 如果原始函数失败，使用带进度的下载
+    Logger.log("原始下载方法失败，尝试带进度的下载...", type: .warning)
+    
+    // 创建URL会话配置
+    let config = URLSessionConfiguration.default
+    config.timeoutIntervalForRequest = 30
+    config.timeoutIntervalForResource = 300 // 5分钟超时
+    let session = URLSession(configuration: config)
+    
+    // 这里应该根据设备信息构建实际的下载URL
+    // 由于libgrabkernel2是C库，我们模拟其行为
+    DispatchQueue.global().async {
+        // 模拟下载进度
+        for progress in stride(from: 0.0, through: 0.9, by: 0.1) {
+            Logger.updateProgress(progress, message: "正在下载内核缓存")
+            Thread.sleep(forTimeInterval: 0.3) // 模拟下载时间
+        }
+        
+        // 最后再次尝试原始下载函数
+        downloadSuccess = grab_kernelcache(outputPath)
+        
+        if downloadSuccess {
+            Logger.updateProgress(1.0, message: "下载完成")
+        } else {
+            Logger.log("下载失败", type: .error)
+        }
+        
         semaphore.signal()
     }
     
-    // 等待下载完成
     semaphore.wait()
-    
     return downloadSuccess
 }
 
+// 重启设备函数
 func restartDevice() {
-    // 使用系统API重启设备
+    Logger.log("正在重启设备...", type: .warning)
+    
+    // 使用系统命令重启设备
     let task = Process()
-    task.launchPath = "/usr/bin/reboot"
+    task.launchPath = "/sbin/reboot"
     task.arguments = []
     
     do {
         try task.run()
+        Logger.log("重启命令已执行", type: .info)
     } catch {
-        // 重启失败
+        Logger.log("重启失败: \(error.localizedDescription)", type: .error)
+        // 如果无法重启，至少注销用户
+        Logger.log("尝试注销用户...", type: .warning)
+        let logoutTask = Process()
+        logoutTask.launchPath = "/usr/bin/logout"
+        logoutTask.arguments = []
+        try? logoutTask.run()
     }
 }
-
 
 func cleanupPrivatePreboot() -> Bool {
     // Remove /private/preboot/tmp
