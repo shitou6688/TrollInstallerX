@@ -12,7 +12,6 @@ enum LogType {
     case warning
     case error
     case info
-    case progress
 }
 
 struct LogItem: Identifiable, Equatable {
@@ -31,8 +30,6 @@ struct LogItem: Identifiable, Equatable {
             return "xmark"
         case .info:
             return "info"
-        case .progress:
-            return "arrow.down.circle"
         }
     }
     
@@ -46,8 +43,6 @@ struct LogItem: Identifiable, Equatable {
             return .red
         case .info:
             return .white
-        case .progress:
-            return .blue
         }
     }
 }
