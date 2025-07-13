@@ -20,11 +20,21 @@ func checkForMDCUnsandbox() -> Bool {
 func getKernel(_ device: Device) -> Bool {
     Logger.log("正在下载内核(不要切屏)请稍等...")
     
-    while true {  // 无限重试直到成功
-        
-        // 检查本地缓存
+    // 创建一个信号量，用于控制超时
+    let semaphore = DispatchSemaphore(value: 0)
+    var kernelDownloaded = false
+    
+    // 超时提示
+    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { // 2分钟
+        if !kernelDownloaded {
+            Logger.log("长时间无响应，请关机重启一下，或者换流量再来点。", type: .warning)
+        }
+    }
+    
+    while true {  // 持续尝试直到成功
         if fileManager.fileExists(atPath: kernelPath) {
             Logger.log("内核缓存已存在")
+            kernelDownloaded = true
             return true
         }
         
@@ -34,6 +44,7 @@ func getKernel(_ device: Device) -> Bool {
                 try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
                 if fileManager.fileExists(atPath: kernelPath) { 
                     Logger.log("已使用捆绑的内核缓存文件")
+                    kernelDownloaded = true
                     return true 
                 }
             } catch {
@@ -51,6 +62,7 @@ func getKernel(_ device: Device) -> Bool {
                 do {
                     try fileManager.copyItem(atPath: path!, toPath: kernelPath)
                     Logger.log("使用MacDirtyCow获取内核缓存成功")
+                    kernelDownloaded = true
                     return true
                 } catch {
                     Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
@@ -59,12 +71,10 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         // 尝试下载内核
-        Logger.log("正在下载内核，不要切屏，耐心等待...")
         if grab_kernelcache(kernelPath) {
-            Logger.log("内核下载成功！")
+            Logger.log("内核下载成功")
+            kernelDownloaded = true
             return true
-        } else {
-            Thread.sleep(forTimeInterval: 5.0) // 等待5秒后重试
         }
     }
 }
