@@ -58,14 +58,66 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 尝试下载内核
-        if grab_kernelcache(kernelPath) {
+        // 尝试下载内核（带进度显示）
+        if downloadKernelWithProgress() {
             Logger.log("内核下载成功！")
             return true
         } else {
             Thread.sleep(forTimeInterval: 1.0) // 等待1秒后重试
         }
     }
+}
+
+// 带进度显示的内核下载函数
+func downloadKernelWithProgress() -> Bool {
+    // 启动进度监控
+    let progressSemaphore = DispatchSemaphore(value: 0)
+    var downloadCompleted = false
+    
+    // 在后台线程监控下载进度
+    DispatchQueue.global().async {
+        var lastFileSize: UInt64 = 0
+        var noProgressCount = 0
+        
+        while !downloadCompleted {
+            if fileManager.fileExists(atPath: kernelPath) {
+                do {
+                    let attributes = try fileManager.attributesOfItem(atPath: kernelPath)
+                    let currentFileSize = attributes[.size] as? UInt64 ?? 0
+                    
+                    if currentFileSize > lastFileSize {
+                        // 文件在增长，显示进度
+                        let progress = min(Int((Double(currentFileSize) / 100_000_000.0) * 100), 99) // 假设内核文件约100MB
+                        Logger.log("内核下载进度: \(progress)%")
+                        lastFileSize = currentFileSize
+                        noProgressCount = 0
+                    } else {
+                        noProgressCount += 1
+                        if noProgressCount > 10 { // 10秒无进度
+                            Logger.log("内核下载中，请耐心等待...")
+                            noProgressCount = 0
+                        }
+                    }
+                } catch {
+                    // 文件可能正在被写入，忽略错误
+                }
+            }
+            
+            Thread.sleep(forTimeInterval: 1.0) // 每秒检查一次
+        }
+        progressSemaphore.signal()
+    }
+    
+    // 执行实际的下载
+    let downloadSuccess = grab_kernelcache(kernelPath)
+    
+    // 标记下载完成
+    downloadCompleted = true
+    
+    // 等待进度监控线程结束
+    progressSemaphore.wait()
+    
+    return downloadSuccess
 }
 
 
