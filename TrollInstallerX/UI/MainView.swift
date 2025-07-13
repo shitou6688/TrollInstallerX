@@ -6,6 +6,78 @@
 //
 
 import SwiftUI
+import Foundation
+import UIKit
+
+// 微信跳转管理器
+class WeChatManager: ObservableObject {
+    static let shared = WeChatManager()
+    
+    func openWeChat() {
+        // 方式1：直接打开微信
+        if let wechatURL = URL(string: "weixin://") {
+            if UIApplication.shared.canOpenURL(wechatURL) {
+                UIApplication.shared.open(wechatURL)
+            } else {
+                // 如果没有安装微信，跳转到App Store
+                if let appStoreURL = URL(string: "https://apps.apple.com/cn/app/wechat/id414478124") {
+                    UIApplication.shared.open(appStoreURL)
+                }
+            }
+        }
+    }
+    
+    func addWeChatFriend(wechatID: String) {
+        // 方式2：添加微信好友（需要替换为实际的微信ID）
+        let wechatAddURL = URL(string: "weixin://dl/business/?t=\(wechatID)")
+        let wechatURL = URL(string: "weixin://")
+        
+        if let addURL = wechatAddURL, UIApplication.shared.canOpenURL(wechatURL!) {
+            UIApplication.shared.open(addURL)
+        } else {
+            // 备用方案：复制微信号到剪贴板
+            UIPasteboard.general.string = wechatID
+            // 显示提示
+            showAlert(title: "微信号已复制", message: "微信号 \(wechatID) 已复制到剪贴板，请手动添加")
+        }
+    }
+    
+    // 生成微信二维码
+    func generateWeChatQRCode(wechatID: String) -> UIImage? {
+        let qrCodeString = "weixin://dl/business/?t=\(wechatID)"
+        
+        guard let data = qrCodeString.data(using: .utf8) else { return nil }
+        
+        if let qrFilter = CIFilter(name: "CIQRCodeGenerator") {
+            qrFilter.setValue(data, forKey: "inputMessage")
+            qrFilter.setValue("H", forKey: "inputCorrectionLevel")
+            
+            if let qrImage = qrFilter.outputImage {
+                let transform = CGAffineTransform(scaleX: 10, y: 10)
+                let scaledQrImage = qrImage.transformed(by: transform)
+                
+                let context = CIContext()
+                if let cgImage = context.createCGImage(scaledQrImage, from: scaledQrImage.extent) {
+                    return UIImage(cgImage: cgImage)
+                }
+            }
+        }
+        return nil
+    }
+    
+    func showAlert(title: String, message: String) {
+        // 使用系统弹窗显示提示
+        DispatchQueue.main.async {
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "确定", style: .default))
+            
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.rootViewController?.present(alert, animated: true)
+            }
+        }
+    }
+}
 
 struct MainView: View {
     
@@ -19,6 +91,7 @@ struct MainView: View {
     
     @State private var isShowingSettings = false
     @State private var isShowingCredits = false
+    @State private var isShowingQRCode = false
     
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
@@ -100,12 +173,14 @@ struct MainView: View {
                         )
                         .padding(.horizontal)
                         
-                        // 广告按钮
-                        Link(destination: URL(string: "https://short.wailian2.cn/l/CPKehJArGf2J12gC")!) {
+                        // 微信联系按钮
+                        Button(action: {
+                            WeChatManager.shared.addWeChatFriend(wechatID: "jumo668888") // 替换为您的微信号
+                        }) {
                             HStack {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                                Text("长期合作点我购买")
+                                Image(systemName: "message.fill")
+                                    .foregroundColor(.green)
+                                Text("添加微信联系")
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .foregroundColor(.white)
                                 Image(systemName: "chevron.right")
@@ -113,6 +188,9 @@ struct MainView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
+                        }
+                        .onLongPressGesture {
+                            isShowingQRCode = true
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 15)
@@ -125,7 +203,7 @@ struct MainView: View {
                     
                     Spacer().frame(height: 40)
                 }
-                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert || isShowingQRCode) ? 10 : 0)
                 
                 // 弹窗
                 if isShowingOTAAlert {
@@ -151,6 +229,11 @@ struct MainView: View {
                 if helperView.showAlert {
                     PopupView(isShowingAlert: $isShowingHelperAlert, shouldAllowDismiss: false, content: {
                         PersistenceHelperView(isShowingHelperAlert: $isShowingHelperAlert, allowNoPersistenceHelper: device.supportsDirectInstall)
+                    })
+                }
+                if isShowingQRCode {
+                    PopupView(isShowingAlert: $isShowingQRCode, content: {
+                        WeChatQRCodeView(wechatID: "jumo668888", isShowing: $isShowingQRCode)
                     })
                 }
             }
@@ -212,5 +295,55 @@ struct MainView: View {
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
         MainView()
+    }
+}
+
+// 微信二维码显示视图
+struct WeChatQRCodeView: View {
+    let wechatID: String
+    @Binding var isShowing: Bool
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("扫描二维码添加微信")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            if let qrCodeImage = WeChatManager.shared.generateWeChatQRCode(wechatID: wechatID) {
+                Image(uiImage: qrCodeImage)
+                    .resizable()
+                    .frame(width: 200, height: 200)
+                    .cornerRadius(10)
+            } else {
+                Text("二维码生成失败")
+                    .foregroundColor(.red)
+            }
+            
+            Text("微信号：\(wechatID)")
+                .font(.headline)
+                .padding(.horizontal)
+            
+            Button("复制微信号") {
+                UIPasteboard.general.string = wechatID
+                WeChatManager.shared.showAlert(title: "已复制", message: "微信号已复制到剪贴板")
+            }
+            .padding()
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            
+            Button("关闭") {
+                isShowing = false
+            }
+            .padding()
+            .background(Color.gray)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(radius: 10)
+        .padding()
     }
 }
