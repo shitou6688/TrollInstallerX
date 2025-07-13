@@ -6,103 +6,6 @@
 //
 
 import SwiftUI
-import Foundation
-import UIKit
-
-// 微信跳转管理器
-class WeChatManager: ObservableObject {
-    static let shared = WeChatManager()
-    
-    func openWeChat() {
-        // 方式1：直接打开微信
-        if let wechatURL = URL(string: "weixin://") {
-            if UIApplication.shared.canOpenURL(wechatURL) {
-                UIApplication.shared.open(wechatURL)
-            } else {
-                // 如果没有安装微信，跳转到App Store
-                if let appStoreURL = URL(string: "https://apps.apple.com/cn/app/wechat/id414478124") {
-                    UIApplication.shared.open(appStoreURL)
-                }
-            }
-        }
-    }
-    
-    func addWeChatFriend(wechatID: String) {
-        // 多种微信跳转方式
-        let wechatURLs = [
-            "weixin://",
-            "weixin://dl/business/?t=\(wechatID)",
-            "weixin://dl/contacts/?t=\(wechatID)",
-            "weixin://dl/addfriend/?t=\(wechatID)"
-        ]
-        
-        // 检查微信是否安装
-        if let wechatURL = URL(string: "weixin://") {
-            if UIApplication.shared.canOpenURL(wechatURL) {
-                // 尝试多种跳转方式
-                for urlString in wechatURLs {
-                    if let url = URL(string: urlString) {
-                        UIApplication.shared.open(url, options: [:]) { success in
-                            if success {
-                                return
-                            }
-                        }
-                    }
-                }
-                
-                // 如果直接跳转失败，显示二维码
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.showAlert(title: "跳转失败", message: "请长按按钮查看二维码添加微信好友")
-                }
-            } else {
-                // 微信未安装，跳转到App Store
-                if let appStoreURL = URL(string: "https://apps.apple.com/cn/app/wechat/id414478124") {
-                    UIApplication.shared.open(appStoreURL)
-                }
-            }
-        } else {
-            // 备用方案：复制微信号到剪贴板
-            UIPasteboard.general.string = wechatID
-            showAlert(title: "微信号已复制", message: "微信号 \(wechatID) 已复制到剪贴板，请手动添加")
-        }
-    }
-    
-    // 生成微信二维码
-    func generateWeChatQRCode(wechatID: String) -> UIImage? {
-        let qrCodeString = "weixin://dl/business/?t=\(wechatID)"
-        
-        guard let data = qrCodeString.data(using: .utf8) else { return nil }
-        
-        if let qrFilter = CIFilter(name: "CIQRCodeGenerator") {
-            qrFilter.setValue(data, forKey: "inputMessage")
-            qrFilter.setValue("H", forKey: "inputCorrectionLevel")
-            
-            if let qrImage = qrFilter.outputImage {
-                let transform = CGAffineTransform(scaleX: 10, y: 10)
-                let scaledQrImage = qrImage.transformed(by: transform)
-                
-                let context = CIContext()
-                if let cgImage = context.createCGImage(scaledQrImage, from: scaledQrImage.extent) {
-                    return UIImage(cgImage: cgImage)
-                }
-            }
-        }
-        return nil
-    }
-    
-    func showAlert(title: String, message: String) {
-        // 使用系统弹窗显示提示
-        DispatchQueue.main.async {
-            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "确定", style: .default))
-            
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                window.rootViewController?.present(alert, animated: true)
-            }
-        }
-    }
-}
 
 struct MainView: View {
     
@@ -116,13 +19,31 @@ struct MainView: View {
     
     @State private var isShowingSettings = false
     @State private var isShowingCredits = false
-    @State private var isShowingQRCode = false
     
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
     
     // Best way to show the alert midway through doInstall()
     @ObservedObject var helperView = HelperAlert.shared
+    
+    // 打开微信函数
+    func openWeChat() {
+        let wechatID = "jumo668888"
+        
+        // 显示微信号供用户复制
+        let alert = UIAlertController(title: "微信联系", message: "微信号: \(wechatID)\n请复制微信号到微信中搜索添加", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "复制微信号", style: .default) { _ in
+            UIPasteboard.general.string = wechatID
+        })
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        
+        // 获取当前视图控制器来显示alert
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first,
+           let rootViewController = window.rootViewController {
+            rootViewController.present(alert, animated: true)
+        }
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -200,12 +121,12 @@ struct MainView: View {
                         
                         // 微信联系按钮
                         Button(action: {
-                            isShowingQRCode = true
+                            openWeChat()
                         }) {
                             HStack {
                                 Image(systemName: "message.fill")
                                     .foregroundColor(.green)
-                                Text("扫描二维码添加微信")
+                                Text("联系客服微信: jumo668888")
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .foregroundColor(.white)
                                 Image(systemName: "chevron.right")
@@ -216,7 +137,7 @@ struct MainView: View {
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 15)
-                                .fill(Color.orange.opacity(0.8))
+                                .fill(Color.green.opacity(0.8))
                                 .shadow(radius: 5)
                         )
                         .padding(.horizontal)
@@ -225,7 +146,7 @@ struct MainView: View {
                     
                     Spacer().frame(height: 40)
                 }
-                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert || isShowingQRCode) ? 10 : 0)
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
                 
                 // 弹窗
                 if isShowingOTAAlert {
@@ -251,11 +172,6 @@ struct MainView: View {
                 if helperView.showAlert {
                     PopupView(isShowingAlert: $isShowingHelperAlert, shouldAllowDismiss: false, content: {
                         PersistenceHelperView(isShowingHelperAlert: $isShowingHelperAlert, allowNoPersistenceHelper: device.supportsDirectInstall)
-                    })
-                }
-                if isShowingQRCode {
-                    PopupView(isShowingAlert: $isShowingQRCode, content: {
-                        WeChatQRCodeView(isShowing: $isShowingQRCode)
                     })
                 }
             }
@@ -317,46 +233,5 @@ struct MainView: View {
 struct MainView_Previews: PreviewProvider {
     static var previews: some View {
         MainView()
-    }
-}
-
-// 微信二维码显示视图
-struct WeChatQRCodeView: View {
-    @Binding var isShowing: Bool
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Text("扫描二维码添加微信")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            // 显示本地二维码图片
-            Image("WeChatQRCode")
-                .resizable()
-                .frame(width: 200, height: 200)
-                .cornerRadius(10)
-
-            Button("复制微信号") {
-                UIPasteboard.general.string = "jumo668888"
-                WeChatManager.shared.showAlert(title: "已复制", message: "微信号已复制到剪贴板")
-            }
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-
-            Button("关闭") {
-                isShowing = false
-            }
-            .padding()
-            .background(Color.gray)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(radius: 10)
-        .padding()
     }
 }
