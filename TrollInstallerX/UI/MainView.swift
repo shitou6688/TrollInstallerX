@@ -22,6 +22,7 @@ struct MainView: View {
     
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
+    @State private var isPreDownloading = false
     
     // Best way to show the alert midway through doInstall()
     @ObservedObject var helperView = HelperAlert.shared
@@ -149,6 +150,48 @@ struct MainView: View {
                         .scaleEffect((!device.isSupported || isInstalling) ? 0.95 : 1.0)
                         .animation(.easeInOut(duration: 0.2), value: device.isSupported)
                         .padding(.horizontal)
+                        
+                        // 预下载内核缓存按钮
+                        if device.isSupported && !isInstalling {
+                            Button(action: {
+                                Task {
+                                    isPreDownloading = true
+                                    let success = await preDownloadKernel(device)
+                                    isPreDownloading = false
+                                    if success {
+                                        Logger.log("🎉 内核缓存预下载完成，现在可以快速安装！")
+                                    }
+                                }
+                            }) {
+                                HStack {
+                                    if isPreDownloading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Image(systemName: "arrow.down.circle")
+                                            .foregroundColor(.blue)
+                                    }
+                                    Text(isPreDownloading ? "正在预下载内核..." : "预下载内核缓存")
+                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                        .foregroundColor(.white)
+                                    if !isPreDownloading {
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                            }
+                            .disabled(isPreDownloading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 15)
+                                    .fill(Color.blue.opacity(0.8))
+                                    .shadow(radius: 5)
+                            )
+                            .padding(.horizontal)
+                            .padding(.top, 10)
+                        }
                         
                         // 微信联系按钮
                         Button(action: {

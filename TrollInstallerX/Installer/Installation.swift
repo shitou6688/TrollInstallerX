@@ -12,71 +12,138 @@ let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
 let docsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].path
 let kernelPath = docsDir + "/kernelcache"
 
+// 预下载内核缓存函数
+func preDownloadKernel(_ device: Device) async -> Bool {
+    Logger.log("🚀 开始预下载内核缓存...")
+    
+    // 如果已经存在，直接返回成功
+    if fileManager.fileExists(atPath: kernelPath) {
+        Logger.log("✅ 内核缓存已存在，无需下载")
+        return true
+    }
+    
+    // 尝试下载
+    Logger.log("📥 正在下载内核缓存，请保持网络连接...")
+    
+    let success = await withCheckedContinuation { continuation in
+        DispatchQueue.global(qos: .userInitiated).async {
+            let result = grab_kernelcache(kernelPath)
+            continuation.resume(returning: result)
+        }
+    }
+    
+    if success {
+        Logger.log("✅ 内核缓存预下载成功！")
+        return true
+    } else {
+        Logger.log("❌ 内核缓存预下载失败", type: .error)
+        return false
+    }
+}
+
 
 func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
 }
 
 func getKernel(_ device: Device) -> Bool {
-    Logger.log("正在下载内核(不要切屏)请稍等...")
+    Logger.log("正在获取内核缓存...")
     
-    // 创建一个信号量，用于控制超时
-    let semaphore = DispatchSemaphore(value: 0)
     var kernelDownloaded = false
+    var attemptCount = 0
+    let maxAttempts = 3
     
-    // 超时提示
-    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { // 2分钟
+    // 超时提示 - 缩短到60秒
+    DispatchQueue.global().asyncAfter(deadline: .now() + 60) {
         if !kernelDownloaded {
-            Logger.log("长时间无响应，请关机重启一下，或者换流量再来点。", type: .warning)
+            Logger.log("网络连接较慢，建议使用VPN或切换网络", type: .warning)
         }
     }
     
-    while true {  // 持续尝试直到成功
-        if fileManager.fileExists(atPath: kernelPath) {
-            Logger.log("内核缓存已存在")
-            kernelDownloaded = true
-            return true
-        }
-        
-        // 检查是否有捆绑的内核缓存
-        if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
-            do {
-                try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
-                if fileManager.fileExists(atPath: kernelPath) { 
-                    Logger.log("已使用捆绑的内核缓存文件")
-                    kernelDownloaded = true
-                    return true 
-                }
-            } catch {
-                Logger.log("复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
+    // 首先检查本地缓存
+    if fileManager.fileExists(atPath: kernelPath) {
+        Logger.log("✅ 内核缓存已存在，跳过下载")
+        kernelDownloaded = true
+        return true
+    }
+    
+    // 检查捆绑的内核缓存（最快的方式）
+    if let bundledPath = Bundle.main.path(forResource: "kernelcache", ofType: "") {
+        Logger.log("📦 发现捆绑内核缓存，正在复制...")
+        do {
+            try fileManager.copyItem(atPath: bundledPath, toPath: kernelPath)
+            if fileManager.fileExists(atPath: kernelPath) { 
+                Logger.log("✅ 已使用捆绑的内核缓存文件")
+                kernelDownloaded = true
+                return true 
             }
+        } catch {
+            Logger.log("❌ 复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
         }
-        
-        // 使用MacDirtyCow尝试获取内核缓存
-        if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
-            let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
-            if fd > 0 {
-                let tokenData = get_NSString_from_file(fd)
-                sandbox_extension_consume(tokenData)
-                let path = get_kernelcache_path()
+    }
+    
+    // 使用MacDirtyCow尝试获取内核缓存（本地方式，无需网络）
+    if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
+        Logger.log("🔍 尝试使用MacDirtyCow获取本地内核缓存...")
+        let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
+        if fd > 0 {
+            let tokenData = get_NSString_from_file(fd)
+            sandbox_extension_consume(tokenData)
+            let path = get_kernelcache_path()
+            if let path = path {
                 do {
-                    try fileManager.copyItem(atPath: path!, toPath: kernelPath)
-                    Logger.log("使用MacDirtyCow获取内核缓存成功")
+                    try fileManager.copyItem(atPath: path, toPath: kernelPath)
+                    Logger.log("✅ 使用MacDirtyCow获取内核缓存成功")
                     kernelDownloaded = true
                     return true
                 } catch {
-                    Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
+                    Logger.log("❌ 复制内核缓存失败: \(error.localizedDescription)", type: .error)
                 }
             }
         }
+    }
+    
+    // 网络下载（最后的选择）
+    Logger.log("🌐 开始网络下载内核缓存...")
+    Logger.log("📊 预计下载时间：30-60秒（取决于网络速度）")
+    
+    while attemptCount < maxAttempts && !kernelDownloaded {
+        attemptCount += 1
+        Logger.log("📥 下载尝试 \(attemptCount)/\(maxAttempts)")
         
-        // 尝试下载内核
+        // 添加下载进度提示
+        DispatchQueue.global().asyncAfter(deadline: .now() + 10) {
+            if !kernelDownloaded {
+                Logger.log("⏳ 下载进行中，请保持网络连接...")
+            }
+        }
+        
+        DispatchQueue.global().asyncAfter(deadline: .now() + 25) {
+            if !kernelDownloaded {
+                Logger.log("⏳ 下载仍在进行，请耐心等待...")
+            }
+        }
+        
         if grab_kernelcache(kernelPath) {
-            Logger.log("内核下载成功")
+            Logger.log("✅ 内核下载成功")
             kernelDownloaded = true
             return true
+        } else {
+            Logger.log("❌ 下载尝试 \(attemptCount) 失败", type: .error)
+            if attemptCount < maxAttempts {
+                Logger.log("⏳ 等待3秒后重试...")
+                Thread.sleep(forTimeInterval: 3.0)
+            }
         }
     }
+    
+    Logger.log("❌ 所有下载方式都失败了", type: .error)
+    Logger.log("💡 建议：", type: .warning)
+    Logger.log("   1. 检查网络连接", type: .warning)
+    Logger.log("   2. 尝试使用VPN", type: .warning)
+    Logger.log("   3. 重启设备后重试", type: .warning)
+    
+    return false
 }
 
 
