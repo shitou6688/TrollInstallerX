@@ -46,6 +46,62 @@ struct LogView: View {
                     } else {
                         VStack(alignment: .leading) {
                             Spacer()
+                            
+                            // 下载进度条
+                            if logger.isDownloading {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "arrow.down.circle.fill")
+                                            .foregroundColor(.blue)
+                                            .font(.system(size: 16))
+                                        Text("内核下载进度")
+                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        Text("\(Int(logger.downloadProgress * 100))%")
+                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                            .foregroundColor(.white.opacity(0.8))
+                                    }
+                                    
+                                    // 进度条
+                                    GeometryReader { progressGeometry in
+                                        ZStack(alignment: .leading) {
+                                            // 背景条
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(Color.white.opacity(0.2))
+                                                .frame(height: 8)
+                                            
+                                            // 进度条
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(
+                                                    LinearGradient(
+                                                        colors: [Color.blue, Color.cyan],
+                                                        startPoint: .leading,
+                                                        endPoint: .trailing
+                                                    )
+                                                )
+                                                .frame(width: progressGeometry.size.width * logger.downloadProgress, height: 8)
+                                                .animation(.easeInOut(duration: 0.3), value: logger.downloadProgress)
+                                        }
+                                    }
+                                    .frame(height: 8)
+                                    
+                                    // 状态文本
+                                    Text(logger.downloadStatus)
+                                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .lineLimit(1)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.white.opacity(0.1))
+                                        .shadow(radius: 5)
+                                )
+                                .padding(.bottom, 10)
+                            }
+                            
                             ForEach(logger.logItems) { log in
                                 HStack {
                                     Label(
