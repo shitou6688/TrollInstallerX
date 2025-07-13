@@ -18,104 +18,155 @@ func checkForMDCUnsandbox() -> Bool {
 }
 
 func getKernel(_ device: Device) -> Bool {
-    Logger.log("正在检查内核缓存...")
-    Logger.resetDownloadProgress()
+    Logger.log("正在获取内核缓存...")
     
-    // 创建一个信号量，用于控制超时
-    let semaphore = DispatchSemaphore(value: 0)
-    var kernelDownloaded = false
+    // 检查是否已存在内核缓存
+    if fileManager.fileExists(atPath: kernelPath) {
+        Logger.log("内核缓存已存在，跳过下载")
+        return true
+    }
     
-    // 超时提示
-    DispatchQueue.global().asyncAfter(deadline: .now() + 120) { // 2分钟
-        if !kernelDownloaded {
-            Logger.log("长时间无响应，请关机重启一下，或者换流量再来点。", type: .warning)
+    // 检查是否有捆绑的内核缓存
+    if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
+        do {
+            try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
+            if fileManager.fileExists(atPath: kernelPath) { 
+                Logger.log("已使用捆绑的内核缓存文件")
+                return true 
+            }
+        } catch {
+            Logger.log("复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
         }
     }
     
-    while true {  // 持续尝试直到成功
-        if fileManager.fileExists(atPath: kernelPath) {
-            Logger.log("内核缓存已存在")
-            kernelDownloaded = true
-            return true
-        }
-        
-        // 检查是否有捆绑的内核缓存
-        if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
-            Logger.log("发现捆绑的内核缓存文件，正在复制...")
-            Logger.updateDownloadProgress(0.3, status: "复制内核缓存文件...")
+    // 使用MacDirtyCow尝试获取内核缓存
+    if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
+        let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
+        if fd > 0 {
+            let tokenData = get_NSString_from_file(fd)
+            sandbox_extension_consume(tokenData)
+            let path = get_kernelcache_path()
             do {
-                try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
-                if fileManager.fileExists(atPath: kernelPath) { 
-                    Logger.log("已使用捆绑的内核缓存文件")
-                    Logger.updateDownloadProgress(1.0, status: "内核缓存准备完成")
-                    kernelDownloaded = true
-                    return true 
-                }
+                try fileManager.copyItem(atPath: path!, toPath: kernelPath)
+                Logger.log("使用MacDirtyCow获取内核缓存成功")
+                return true
             } catch {
-                Logger.log("复制捆绑内核缓存失败: \(error.localizedDescription)", type: .error)
+                Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
             }
         }
+    }
+    
+    // 网络下载内核缓存（带重试机制）
+    return downloadKernelWithRetry()
+}
+
+// 新增：带重试机制的内核下载函数
+func downloadKernelWithRetry() -> Bool {
+    let maxRetries = 3
+    let timeoutSeconds = 180 // 3分钟超时
+    
+    // 检查网络连接
+    if !checkNetworkConnectivity() {
+        Logger.log("网络连接不可用，请检查网络设置", type: .error)
+        return false
+    }
+    
+    for attempt in 1...maxRetries {
+        Logger.log("正在下载内核缓存 (尝试 \(attempt)/\(maxRetries))")
         
-        // 使用MacDirtyCow尝试获取内核缓存
-        if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
-            Logger.log("尝试使用MacDirtyCow获取内核缓存...")
-            Logger.updateDownloadProgress(0.2, status: "使用MacDirtyCow获取内核...")
-            let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
-            if fd > 0 {
-                let tokenData = get_NSString_from_file(fd)
-                sandbox_extension_consume(tokenData)
-                let path = get_kernelcache_path()
-                do {
-                    try fileManager.copyItem(atPath: path!, toPath: kernelPath)
-                    Logger.log("使用MacDirtyCow获取内核缓存成功")
-                    Logger.updateDownloadProgress(1.0, status: "内核缓存获取成功")
-                    kernelDownloaded = true
-                    return true
-                } catch {
-                    Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
+        // 创建下载任务
+        let downloadGroup = DispatchGroup()
+        var downloadSuccess = false
+        var downloadError: String?
+        
+        downloadGroup.enter()
+        
+        // 在后台线程执行下载
+        DispatchQueue.global(qos: .userInitiated).async {
+            // 设置超时
+            let timeoutWorkItem = DispatchWorkItem {
+                if !downloadSuccess {
+                    downloadError = "下载超时"
+                    downloadGroup.leave()
                 }
             }
-        }
-        
-        // 尝试下载内核
-        Logger.log("正在下载内核(不要切屏)请稍等...")
-        Logger.updateDownloadProgress(0.1, status: "正在连接服务器...")
-        
-        // 模拟下载进度（因为libgrabkernel2不支持进度回调）
-        var progressTimer: Timer?
-        DispatchQueue.main.async {
-            progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-                let currentProgress = Logger.shared.downloadProgress
-                if currentProgress < 0.9 {
-                    let newProgress = min(currentProgress + 0.05, 0.9)
-                    let statusMessages = [
-                        "正在连接服务器...",
-                        "正在获取内核信息...",
-                        "正在下载内核文件...",
-                        "正在验证文件完整性...",
-                        "正在处理内核数据..."
-                    ]
-                    let statusIndex = Int(newProgress * 10) % statusMessages.count
-                    Logger.updateDownloadProgress(newProgress, status: statusMessages[statusIndex])
-                }
+            
+            DispatchQueue.global().asyncAfter(deadline: .now() + Double(timeoutSeconds), execute: timeoutWorkItem)
+            
+            // 执行下载
+            if grab_kernelcache(kernelPath) {
+                downloadSuccess = true
+                timeoutWorkItem.cancel()
+                downloadGroup.leave()
+            } else {
+                downloadError = "下载失败"
+                timeoutWorkItem.cancel()
+                downloadGroup.leave()
             }
         }
         
-        if grab_kernelcache(kernelPath) {
-            DispatchQueue.main.async {
-                progressTimer?.invalidate()
-            }
-            Logger.log("内核下载成功")
-            Logger.updateDownloadProgress(1.0, status: "内核下载完成")
-            kernelDownloaded = true
+        // 等待下载完成
+        downloadGroup.wait()
+        
+        if downloadSuccess {
+            Logger.log("内核缓存下载成功！")
             return true
         } else {
-            DispatchQueue.main.async {
-                progressTimer?.invalidate()
+            Logger.log("下载失败: \(downloadError ?? "未知错误")", type: .error)
+            
+            if attempt < maxRetries {
+                Logger.log("等待 3 秒后重试...")
+                Thread.sleep(forTimeInterval: 3)
             }
-            Logger.updateDownloadProgress(0.0, status: "下载失败，正在重试...")
         }
     }
+    
+    Logger.log("内核缓存下载失败，已尝试 \(maxRetries) 次", type: .error)
+    
+    // 清理可能存在的损坏文件
+    cleanupFailedDownload()
+    
+    return false
+}
+
+// 新增：清理下载失败的文件
+func cleanupFailedDownload() {
+    if fileManager.fileExists(atPath: kernelPath) {
+        do {
+            try fileManager.removeItem(atPath: kernelPath)
+            Logger.log("已清理下载失败的内核缓存文件")
+        } catch {
+            Logger.log("清理失败文件时出错: \(error.localizedDescription)", type: .warning)
+        }
+    }
+}
+
+// 新增：检查网络连接状态
+func checkNetworkConnectivity() -> Bool {
+    // 简单的网络连接检查
+    guard let url = URL(string: "https://www.apple.com") else { return false }
+    
+    let semaphore = DispatchSemaphore(value: 0)
+    var isConnected = false
+    
+    let task = URLSession.shared.dataTask(with: url) { _, response, error in
+        if let httpResponse = response as? HTTPURLResponse {
+            isConnected = httpResponse.statusCode == 200
+        }
+        semaphore.signal()
+    }
+    
+    task.resume()
+    
+    // 等待最多5秒
+    let result = semaphore.wait(timeout: .now() + 5)
+    
+    if result == .timedOut {
+        Logger.log("网络连接检查超时", type: .warning)
+        return false
+    }
+    
+    return isConnected
 }
 
 
@@ -162,19 +213,29 @@ func tryInstallPersistenceHelper(_ candidates: [InstalledApp]) -> Bool {
 
 // 添加内核查找函数的更健壮版本
 func robustInitialiseKernelInfo(_ kernelPath: String, _ iOS14: Bool) -> Bool {
-    for attempt in 1...3 {
-        Logger.log("正在查找内核漏洞 (尝试 \(attempt)/3)")
+    for attempt in 1...5 { // 增加重试次数到5次
+        Logger.log("正在查找内核漏洞 (尝试 \(attempt)/5)")
+        
+        // 检查内核文件是否存在
+        if !fileManager.fileExists(atPath: kernelPath) {
+            Logger.log("内核缓存文件不存在，无法进行漏洞查找", type: .error)
+            return false
+        }
+        
         if initialise_kernel_info(kernelPath, iOS14) {
             Logger.log("查找内核漏洞成功")
             return true
         }
         
         Logger.log("查找内核漏洞失败，将尝试重试", type: .error)
-        // 短暂等待后重试
-        sleep(1)
+        
+        // 递增等待时间
+        let waitTime = attempt * 2 // 2, 4, 6, 8, 10秒
+        Logger.log("等待 \(waitTime) 秒后重试...")
+        Thread.sleep(forTimeInterval: TimeInterval(waitTime))
     }
     
-    Logger.log("查找内核漏洞失败，已尝试3次", type: .error)
+    Logger.log("查找内核漏洞失败，已尝试5次", type: .error)
     return false
 }
 
@@ -189,8 +250,10 @@ func doDirectInstall(_ device: Device) async -> Bool {
     Logger.log("正运行在 \(device.modelIdentifier) 设备上的 iOS 版本为 \(device.version.readableString)")
     
     if !iOS14 {
+        Logger.log("iOS 15+ 需要下载内核缓存...")
         if !(getKernel(device)) {
-            Logger.log("获取内核漏洞失败", type: .error)
+            Logger.log("获取内核缓存失败，安装无法继续", type: .error)
+            Logger.log("请检查网络连接或重启设备后重试", type: .warning)
             return false
         }
     }

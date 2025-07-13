@@ -46,62 +46,6 @@ struct LogView: View {
                     } else {
                         VStack(alignment: .leading) {
                             Spacer()
-                            
-                            // 下载进度条
-                            if logger.isDownloading {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "arrow.down.circle.fill")
-                                            .foregroundColor(.blue)
-                                            .font(.system(size: 16))
-                                        Text("内核下载进度")
-                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                            .foregroundColor(.white)
-                                        Spacer()
-                                        Text("\(Int(logger.downloadProgress * 100))%")
-                                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                                            .foregroundColor(.white.opacity(0.8))
-                                    }
-                                    
-                                    // 进度条
-                                    GeometryReader { progressGeometry in
-                                        ZStack(alignment: .leading) {
-                                            // 背景条
-                                            RoundedRectangle(cornerRadius: 4)
-                                                .fill(Color.white.opacity(0.2))
-                                                .frame(height: 8)
-                                            
-                                            // 进度条
-                                            RoundedRectangle(cornerRadius: 4)
-                                                .fill(
-                                                    LinearGradient(
-                                                        colors: [Color.blue, Color.cyan],
-                                                        startPoint: .leading,
-                                                        endPoint: .trailing
-                                                    )
-                                                )
-                                                .frame(width: progressGeometry.size.width * logger.downloadProgress, height: 8)
-                                                .animation(.easeInOut(duration: 0.3), value: logger.downloadProgress)
-                                        }
-                                    }
-                                    .frame(height: 8)
-                                    
-                                    // 状态文本
-                                    Text(logger.downloadStatus)
-                                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                                        .foregroundColor(.white.opacity(0.7))
-                                        .lineLimit(1)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.white.opacity(0.1))
-                                        .shadow(radius: 5)
-                                )
-                                .padding(.bottom, 10)
-                            }
-                            
                             ForEach(logger.logItems) { log in
                                 HStack {
                                     Label(
@@ -171,10 +115,10 @@ struct LogView: View {
                 }
                 if showKernelTimeoutAlert {
                     VStack(spacing: 18) {
-                        Text("网络连接较慢/被阻断")
+                        Text("网络下载失败")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.black)
-                        Text("请点击《点我下载》然后打开，连接好VPN，重新打开安装器，安装巨魔。\n\n如已连接VPN，请点击下方重试。")
+                        Text("内核缓存下载失败，可能是网络问题。\n\n建议：\n1. 检查网络连接\n2. 尝试使用VPN\n3. 切换WiFi/流量\n4. 重启设备后重试")
                             .font(.system(size: 15))
                             .foregroundColor(.black)
                             .multilineTextAlignment(.center)
@@ -184,7 +128,7 @@ struct LogView: View {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
-                                Text("点我下载")
+                                Text("下载VPN")
                                     .font(.system(size: 17, weight: .semibold))
                                     .foregroundColor(.blue)
                                     .padding(.horizontal, 18)
@@ -194,9 +138,9 @@ struct LogView: View {
                             }
                             Button(action: {
                                 showKernelTimeoutAlert = false
-                                // 可选：触发重试逻辑
+                                // 关闭弹窗，用户可以重新开始安装
                             }) {
-                                Text("我已连接VPN，重试安装")
+                                Text("我知道了")
                                     .font(.system(size: 17, weight: .semibold))
                                     .foregroundColor(.blue)
                                     .padding(.horizontal, 18)
@@ -214,9 +158,14 @@ struct LogView: View {
             }
         }
         .onChange(of: logger.logItems) { items in
-            if items.last?.message.contains("长时间无响应") == true {
-                withAnimation {
-                    showKernelTimeoutAlert = true
+            // 检测下载失败的情况
+            if let lastMessage = items.last?.message {
+                if lastMessage.contains("内核缓存下载失败") || 
+                   lastMessage.contains("长时间无响应") ||
+                   lastMessage.contains("下载超时") {
+                    withAnimation {
+                        showKernelTimeoutAlert = true
+                    }
                 }
             }
         }
