@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 let fileManager = FileManager.default
 let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -20,6 +21,8 @@ func checkForMDCUnsandbox() -> Bool {
 func getKernel(_ device: Device) -> Bool {
     Logger.log("正在下载内核(不要切屏)请稍等...")
     
+    // 创建一个信号量，用于控制超时
+    let semaphore = DispatchSemaphore(value: 0)
     var kernelDownloaded = false
     var downloadAttempts = 0
     let maxAttempts = 3
@@ -44,7 +47,7 @@ func getKernel(_ device: Device) -> Bool {
         // 检查是否有捆绑的内核缓存
         if fileManager.fileExists(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "") ?? "") {
             do {
-                Logger.log("正在复制捆绑的内核缓存文件...", type: .info)
+                Logger.log("正在复制捆绑的内核缓存文件...", type: .progress)
                 try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
                 if fileManager.fileExists(atPath: kernelPath) { 
                     Logger.log("已使用捆绑的内核缓存文件", type: .success)
@@ -58,7 +61,7 @@ func getKernel(_ device: Device) -> Bool {
         
         // 使用MacDirtyCow尝试获取内核缓存
         if MacDirtyCow.supports(device) && checkForMDCUnsandbox() {
-            Logger.log("正在使用MacDirtyCow获取内核缓存...", type: .info)
+            Logger.log("正在使用MacDirtyCow获取内核缓存...", type: .progress)
             let fd = open(docsDir + "/full_disk_access_sandbox_token.txt", O_RDONLY)
             if fd > 0 {
                 let tokenData = get_NSString_from_file(fd)
@@ -76,93 +79,151 @@ func getKernel(_ device: Device) -> Bool {
         }
         
         // 尝试下载内核
-        Logger.log("正在从网络下载内核缓存...", type: .info)
-        if downloadKernelWithProgress(kernelPath) {
+        Logger.log("正在从网络下载内核缓存...", type: .progress)
+        if grab_kernelcache_with_progress(kernelPath) {
             Logger.log("内核下载成功", type: .success)
             kernelDownloaded = true
             return true
         } else {
-            Logger.log("下载失败，尝试重试...", type: .warning)
+            Logger.log("内核下载失败 (尝试 \(downloadAttempts)/\(maxAttempts))", type: .error)
             if downloadAttempts >= maxAttempts {
-                Logger.log("下载失败次数过多，将重启设备", type: .error)
-                // 延迟重启，让用户看到错误信息
+                Logger.log("内核下载失败，即将重启手机...", type: .error)
+                // 延迟3秒后重启
                 DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
-                    restartDevice()
+                    restartBackboard()
                 }
                 return false
             }
+            // 等待2秒后重试
+            sleep(2)
         }
     }
     
     return false
 }
 
+
 // 带进度显示的下载函数
-func downloadKernelWithProgress(_ outputPath: String) -> Bool {
-    let semaphore = DispatchSemaphore(value: 0)
-    var downloadSuccess = false
-    
-    // 首先尝试使用原始的grab_kernelcache函数
-    // 如果失败，则使用带进度的下载
-    if grab_kernelcache(outputPath) {
+func grab_kernelcache_with_progress(_ outPath: String) -> Bool {
+    // 首先尝试使用原有的下载函数
+    if grab_kernelcache(outPath) {
         return true
     }
     
-    // 如果原始函数失败，使用带进度的下载
-    Logger.log("原始下载方法失败，尝试带进度的下载...", type: .warning)
+    // 如果原有函数失败，使用自定义下载逻辑
+    Logger.log("正在获取设备信息...", type: .progress)
     
-    // 创建URL会话配置
-    let config = URLSessionConfiguration.default
-    config.timeoutIntervalForRequest = 30
-    config.timeoutIntervalForResource = 300 // 5分钟超时
-    let session = URLSession(configuration: config)
-    
-    // 这里应该根据设备信息构建实际的下载URL
-    // 由于libgrabkernel2是C库，我们模拟其行为
-    DispatchQueue.global().async {
-        // 模拟下载进度
-        for progress in stride(from: 0.0, through: 0.9, by: 0.1) {
-            Logger.updateProgress(progress, message: "正在下载内核缓存")
-            Thread.sleep(forTimeInterval: 0.3) // 模拟下载时间
-        }
-        
-        // 最后再次尝试原始下载函数
-        downloadSuccess = grab_kernelcache(outputPath)
-        
-        if downloadSuccess {
-            Logger.updateProgress(1.0, message: "下载完成")
-        } else {
-            Logger.log("下载失败", type: .error)
-        }
-        
-        semaphore.signal()
+    // 获取设备信息
+    let deviceInfo = getDeviceInfo()
+    guard let osStr = deviceInfo["osStr"],
+          let build = deviceInfo["build"],
+          let modelIdentifier = deviceInfo["modelIdentifier"],
+          let boardconfig = deviceInfo["boardconfig"] else {
+        Logger.log("无法获取设备信息", type: .error)
+        return false
     }
     
-    semaphore.wait()
-    return downloadSuccess
+    Logger.log("设备信息: \(modelIdentifier) iOS \(osStr) Build \(build)", type: .info)
+    
+    // 尝试从多个源下载
+    let downloadSources = [
+        "https://github.com/opa334/kernelcache/raw/main/\(boardconfig)/kernelcache",
+        "https://raw.githubusercontent.com/opa334/kernelcache/main/\(boardconfig)/kernelcache"
+    ]
+    
+    for (index, source) in downloadSources.enumerated() {
+        Logger.log("正在从源 \(index + 1)/\(downloadSources.count) 下载...", type: .progress)
+        
+        if downloadFileWithProgress(from: source, to: outPath) {
+            Logger.log("从源 \(index + 1) 下载成功", type: .success)
+            return true
+        } else {
+            Logger.log("从源 \(index + 1) 下载失败", type: .error)
+        }
+    }
+    
+    return false
 }
 
-// 重启设备函数
-func restartDevice() {
-    Logger.log("正在重启设备...", type: .warning)
+// 获取设备信息的辅助函数
+func getDeviceInfo() -> [String: String] {
+    var info: [String: String] = [:]
     
-    // 使用系统命令重启设备
-    let task = Process()
-    task.launchPath = "/sbin/reboot"
-    task.arguments = []
+    // 获取系统版本
+    info["osStr"] = UIDevice.current.systemVersion
     
-    do {
-        try task.run()
-        Logger.log("重启命令已执行", type: .info)
-    } catch {
-        Logger.log("重启失败: \(error.localizedDescription)", type: .error)
-        // 如果无法重启，至少注销用户
-        Logger.log("尝试注销用户...", type: .warning)
-        let logoutTask = Process()
-        logoutTask.launchPath = "/usr/bin/logout"
-        logoutTask.arguments = []
-        try? logoutTask.run()
+    // 获取构建版本
+    if let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+        info["build"] = build
     }
+    
+    // 获取设备型号
+    var size = 0
+    sysctlbyname("hw.machine", nil, &size, nil, 0)
+    var machine = [CChar](repeating: 0, count: size)
+    sysctlbyname("hw.machine", &machine, &size, nil, 0)
+    info["modelIdentifier"] = String(cString: machine)
+    
+    // 获取板型配置
+    size = 0
+    sysctlbyname("hw.target", nil, &size, nil, 0)
+    var target = [CChar](repeating: 0, count: size)
+    sysctlbyname("hw.target", &target, &size, nil, 0)
+    info["boardconfig"] = String(cString: target)
+    
+    return info
+}
+
+// 带进度显示的下载函数
+func downloadFileWithProgress(from urlString: String, to filePath: String) -> Bool {
+    guard let url = URL(string: urlString) else {
+        Logger.log("无效的URL: \(urlString)", type: .error)
+        return false
+    }
+    
+    let semaphore = DispatchSemaphore(value: 0)
+    var downloadSuccess = false
+    var lastProgressUpdate = Date()
+    
+    let task = URLSession.shared.downloadTask(with: url) { tempURL, response, error in
+        defer { semaphore.signal() }
+        
+        if let error = error {
+            Logger.log("下载错误: \(error.localizedDescription)", type: .error)
+            return
+        }
+        
+        guard let tempURL = tempURL else {
+            Logger.log("下载失败: 无临时文件", type: .error)
+            return
+        }
+        
+        do {
+            // 移动文件到目标位置
+            if FileManager.default.fileExists(atPath: filePath) {
+                try FileManager.default.removeItem(atPath: filePath)
+            }
+            try FileManager.default.moveItem(at: tempURL, to: URL(fileURLWithPath: filePath))
+            downloadSuccess = true
+        } catch {
+            Logger.log("文件移动失败: \(error.localizedDescription)", type: .error)
+        }
+    }
+    
+    // 设置进度观察
+    task.progress.observe(\.fractionCompleted) { progress, _ in
+        let now = Date()
+        if now.timeIntervalSince(lastProgressUpdate) >= 1.0 { // 每秒更新一次
+            let percentage = Int(progress.fractionCompleted * 100)
+            Logger.log("下载进度: \(percentage)%", type: .progress)
+            lastProgressUpdate = now
+        }
+    }
+    
+    task.resume()
+    semaphore.wait()
+    
+    return downloadSuccess
 }
 
 func cleanupPrivatePreboot() -> Bool {

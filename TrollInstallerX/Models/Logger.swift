@@ -68,17 +68,4 @@ class Logger: ObservableObject {
             shared.logItems.sort(by: { $0.date < $1.date })
         }
     }
-    
-    static func updateProgress(_ progress: Double, message: String) {
-        let progressMessage = "\(message) \(Int(progress * 100))%"
-        DispatchQueue.main.async {
-            // 查找最后一个进度日志并更新，如果没有则创建新的
-            if let lastIndex = shared.logItems.lastIndex(where: { $0.type == .progress }) {
-                shared.logItems[lastIndex] = LogItem(message: progressMessage, type: .progress)
-            } else {
-                let newItem = LogItem(message: progressMessage, type: .progress)
-                shared.logItems.append(newItem)
-            }
-        }
-    }
 }

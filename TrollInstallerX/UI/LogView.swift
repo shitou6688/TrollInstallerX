@@ -1,16 +1,5 @@
 import SwiftUI
 
-// 从消息中提取进度百分比
-func extractProgressFromMessage(_ message: String) -> Double {
-    // 查找消息中的百分比数字
-    let pattern = "(\\d+)%"
-    if let range = message.range(of: pattern, options: .regularExpression),
-       let percentage = Int(message[range].replacingOccurrences(of: "%", with: "")) {
-        return Double(percentage) / 100.0
-    }
-    return 0.0
-}
-
 struct StdoutLog: Identifiable, Equatable {
     let message: String
     let id = UUID()
@@ -59,67 +48,22 @@ struct LogView: View {
                             Spacer()
                             ForEach(logger.logItems) { log in
                                 HStack {
-                                    if log.type == .progress {
-                                        // 进度条样式
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            HStack {
-                                                Image(systemName: log.image)
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                    .frame(width: 12, height: 12)
-                                                    .foregroundColor(.blue)
-                                                    .padding(.trailing, 5)
-                                                
-                                                Text(log.message)
-                                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                                    .foregroundColor(.blue)
-                                                
-                                                Spacer()
-                                            }
-                                            
-                                            // 进度条
-                                            GeometryReader { geometry in
-                                                ZStack(alignment: .leading) {
-                                                    RoundedRectangle(cornerRadius: 2)
-                                                        .fill(Color.blue.opacity(0.3))
-                                                        .frame(height: 4)
-                                                    
-                                                    // 从消息中提取进度百分比
-                                                    let progress = extractProgressFromMessage(log.message)
-                                                    RoundedRectangle(cornerRadius: 2)
-                                                        .fill(Color.blue)
-                                                        .frame(width: geometry.size.width * progress, height: 4)
-                                                        .animation(.easeInOut(duration: 0.3), value: log.message)
-                                                }
-                                            }
-                                            .frame(height: 4)
+                                    Label(
+                                        title: {
+                                            Text(log.message)
+                                                .font(.system(size: 13, weight: .regular, design: .rounded))
+                                                .shadow(radius: 2)
+                                        },
+                                        icon: {
+                                            Image(systemName: log.image)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 12, height: 12)
+                                                .padding(.trailing, 5)
                                         }
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal, 12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .fill(Color.blue.opacity(0.1))
-                                        )
-                                    } else {
-                                        // 普通日志样式
-                                        Label(
-                                            title: {
-                                                Text(log.message)
-                                                    .font(.system(size: 13, weight: .regular, design: .rounded))
-                                                    .shadow(radius: 2)
-                                            },
-                                            icon: {
-                                                Image(systemName: log.image)
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                    .frame(width: 12, height: 12)
-                                                    .padding(.trailing, 5)
-                                            }
-                                        )
-                                        .foregroundColor(log.colour)
-                                        .padding(.vertical, 5)
-                                    }
-                                    
+                                    )
+                                    .foregroundColor(log.colour)
+                                    .padding(.vertical, 5)
                                     .transition(AnyTransition.asymmetric(
                                         insertion: .move(edge: .bottom),
                                         removal: .move(edge: .top)
