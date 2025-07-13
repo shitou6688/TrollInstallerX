@@ -7,6 +7,7 @@ struct StdoutLog: Identifiable, Equatable {
 
 struct LogView: View {
     @StateObject var logger = Logger.shared
+    @StateObject var downloadManager = DownloadManager.shared
     @Binding var installationFinished: Bool
     
     @AppStorage("verbose", store: TIXDefaults()) var verbose: Bool = false
@@ -45,6 +46,13 @@ struct LogView: View {
                         }
                     } else {
                         VStack(alignment: .leading) {
+                            // 显示下载进度
+                            if downloadManager.isDownloading {
+                                DownloadProgressView()
+                                    .padding(.horizontal)
+                                    .padding(.bottom, 10)
+                            }
+                            
                             Spacer()
                             ForEach(logger.logItems) { log in
                                 HStack {
@@ -115,10 +123,10 @@ struct LogView: View {
                 }
                 if showKernelTimeoutAlert {
                     VStack(spacing: 18) {
-                        Text("网络下载失败")
+                        Text("网络连接较慢/被阻断")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.black)
-                        Text("内核缓存下载失败，可能是网络问题。\n\n建议：\n1. 检查网络连接\n2. 尝试使用VPN\n3. 切换WiFi/流量\n4. 重启设备后重试")
+                        Text("请点击《点我下载》然后打开，连接好VPN，重新打开安装器，安装巨魔。\n\n如已连接VPN，请点击下方重试。")
                             .font(.system(size: 15))
                             .foregroundColor(.black)
                             .multilineTextAlignment(.center)
@@ -128,7 +136,7 @@ struct LogView: View {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
-                                Text("下载VPN")
+                                Text("点我下载")
                                     .font(.system(size: 17, weight: .semibold))
                                     .foregroundColor(.blue)
                                     .padding(.horizontal, 18)
@@ -138,9 +146,9 @@ struct LogView: View {
                             }
                             Button(action: {
                                 showKernelTimeoutAlert = false
-                                // 关闭弹窗，用户可以重新开始安装
+                                // 可选：触发重试逻辑
                             }) {
-                                Text("我知道了")
+                                Text("我已连接VPN，重试安装")
                                     .font(.system(size: 17, weight: .semibold))
                                     .foregroundColor(.blue)
                                     .padding(.horizontal, 18)
@@ -158,14 +166,9 @@ struct LogView: View {
             }
         }
         .onChange(of: logger.logItems) { items in
-            // 检测下载失败的情况
-            if let lastMessage = items.last?.message {
-                if lastMessage.contains("内核缓存下载失败") || 
-                   lastMessage.contains("长时间无响应") ||
-                   lastMessage.contains("下载超时") {
-                    withAnimation {
-                        showKernelTimeoutAlert = true
-                    }
+            if items.last?.message.contains("长时间无响应") == true {
+                withAnimation {
+                    showKernelTimeoutAlert = true
                 }
             }
         }
