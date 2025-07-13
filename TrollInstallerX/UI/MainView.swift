@@ -126,7 +126,7 @@ struct MainView: View {
                             HStack {
                                 Image(systemName: "message.fill")
                                     .foregroundColor(.green)
-                                Text("联系客服微信: jumo668888")
+                                Text("点击联系客服")
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .foregroundColor(.white)
                                 Image(systemName: "chevron.right")
