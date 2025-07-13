@@ -105,18 +105,49 @@ struct MainView: View {
                                 }
                             }
                         }, label: {
-                            Text(device.isSupported ? "开始安装" : "您的设备暂不支持！")
-                                .font(.system(size: 20, weight: .regular, design: .rounded))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                            HStack(spacing: 12) {
+                                Image(systemName: device.isSupported ? "arrow.down.circle.fill" : "exclamationmark.triangle.fill")
+                                    .font(.system(size: 24, weight: .semibold))
+                                    .foregroundColor(.white)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(device.isSupported ? "开始安装" : "您的设备暂不支持！")
+                                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                                        .foregroundColor(.white)
+                                    
+                                    if device.isSupported {
+                                        Text("一键安装巨魔商店")
+                                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                                            .foregroundColor(.white.opacity(0.8))
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right.circle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 18)
                         })
                         .disabled(!device.isSupported || isInstalling)
                         .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(device.isSupported ? Color.accentColor : Color.red)
-                                .opacity((!device.isSupported || isInstalling) ? 0.5 : 1)
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(
+                                    LinearGradient(
+                                        colors: device.isSupported ? 
+                                            [Color(hex: 0xFF6B35), Color(hex: 0xFF8E53)] : 
+                                            [Color.red.opacity(0.8), Color.red.opacity(0.6)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .shadow(color: device.isSupported ? Color(hex: 0xFF6B35).opacity(0.4) : Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
                         )
+                        .scaleEffect((!device.isSupported || isInstalling) ? 0.95 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: device.isSupported)
                         .padding(.horizontal)
                         
                         // 微信联系按钮
