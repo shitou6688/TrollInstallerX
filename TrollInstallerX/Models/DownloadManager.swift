@@ -48,13 +48,13 @@ class DownloadManager: ObservableObject {
                     timer.invalidate()
                 }
                 
-                DispatchQueue.main.async {
-                    self.downloadProgress = progress
-                    self.downloadStatus = "正在下载内核... \(Int(progress * 100))%"
-                    self.downloadedSize = "\(Int(progress * 50))MB"
-                    self.totalSize = "50MB"
-                    self.downloadSpeed = "2.5MB/s"
-                }
+                                 DispatchQueue.main.async {
+                     self.downloadProgress = progress
+                     self.downloadStatus = "下载中... \(Int(progress * 100))%"
+                     self.downloadedSize = "\(Int(progress * 50))MB"
+                     self.totalSize = "50MB"
+                     self.downloadSpeed = "2.5MB/s"
+                 }
             }
             
             // 执行实际的下载
@@ -69,15 +69,12 @@ class DownloadManager: ObservableObject {
                 if success {
                     self.downloadProgress = 1.0
                     self.downloadStatus = "下载完成"
-                    Logger.log("内核下载成功", type: .success)
                     completion(true)
                 } else {
                     self.downloadStatus = "下载失败"
-                    Logger.log("内核下载失败", type: .error)
                     
                     // 下载失败时自动重启手机
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        Logger.log("下载失败，5秒后自动重启设备...", type: .warning)
                         DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
                             self.restartDevice()
                         }
@@ -148,8 +145,6 @@ class DownloadManager: ObservableObject {
     }
     
     private func restartDevice() {
-        Logger.log("正在重启设备...", type: .warning)
-        
         // 使用系统API重启设备
         let task = Process()
         task.launchPath = "/usr/bin/reboot"
@@ -158,14 +153,9 @@ class DownloadManager: ObservableObject {
         do {
             try task.run()
         } catch {
-            Logger.log("重启失败，请手动重启设备", type: .error)
+            // 重启失败
         }
     }
     
-    func cancelDownload() {
-        downloadTask?.cancel()
-        isDownloading = false
-        downloadStatus = "下载已取消"
-        Logger.log("下载已取消", type: .warning)
-    }
+
 } 

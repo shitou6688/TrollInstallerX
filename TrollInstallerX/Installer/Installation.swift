@@ -78,8 +78,6 @@ func downloadKernelWithProgress() -> Bool {
 }
 
 func restartDevice() {
-    Logger.log("正在重启设备...", type: .warning)
-    
     // 使用系统API重启设备
     let task = Process()
     task.launchPath = "/usr/bin/reboot"
@@ -88,7 +86,7 @@ func restartDevice() {
     do {
         try task.run()
     } catch {
-        Logger.log("重启失败，请手动重启设备", type: .error)
+        // 重启失败
     }
 }
 
