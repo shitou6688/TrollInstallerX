@@ -17,6 +17,12 @@ func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
 }
 
+// 检查TrollStore是否已安装
+func isTrollStoreInstalled() -> Bool {
+    return fileManager.fileExists(atPath: "/var/containers/Bundle/Application/TrollStore.app") || 
+           fileManager.fileExists(atPath: "/Applications/TrollStore.app")
+}
+
 func getKernel(_ device: Device) -> Bool {
     Logger.log("正在下载内核(不要切屏)请稍等...")
     
@@ -58,66 +64,14 @@ func getKernel(_ device: Device) -> Bool {
             }
         }
         
-        // 尝试下载内核（带进度显示）
-        if downloadKernelWithProgress() {
+        // 尝试下载内核
+        if grab_kernelcache(kernelPath) {
             Logger.log("内核下载成功！")
             return true
         } else {
             Thread.sleep(forTimeInterval: 1.0) // 等待1秒后重试
         }
     }
-}
-
-// 带进度显示的内核下载函数
-func downloadKernelWithProgress() -> Bool {
-    // 启动进度监控
-    let progressSemaphore = DispatchSemaphore(value: 0)
-    var downloadCompleted = false
-    
-    // 在后台线程监控下载进度
-    DispatchQueue.global().async {
-        var lastFileSize: UInt64 = 0
-        var noProgressCount = 0
-        
-        while !downloadCompleted {
-            if fileManager.fileExists(atPath: kernelPath) {
-                do {
-                    let attributes = try fileManager.attributesOfItem(atPath: kernelPath)
-                    let currentFileSize = attributes[.size] as? UInt64 ?? 0
-                    
-                    if currentFileSize > lastFileSize {
-                        // 文件在增长，显示进度
-                        let progress = min(Int((Double(currentFileSize) / 100_000_000.0) * 100), 99) // 假设内核文件约100MB
-                        Logger.log("内核下载进度: \(progress)%")
-                        lastFileSize = currentFileSize
-                        noProgressCount = 0
-                    } else {
-                        noProgressCount += 1
-                        if noProgressCount > 10 { // 10秒无进度
-                            Logger.log("内核下载中，请耐心等待...")
-                            noProgressCount = 0
-                        }
-                    }
-                } catch {
-                    // 文件可能正在被写入，忽略错误
-                }
-            }
-            
-            Thread.sleep(forTimeInterval: 1.0) // 每秒检查一次
-        }
-        progressSemaphore.signal()
-    }
-    
-    // 执行实际的下载
-    let downloadSuccess = grab_kernelcache(kernelPath)
-    
-    // 标记下载完成
-    downloadCompleted = true
-    
-    // 等待进度监控线程结束
-    progressSemaphore.wait()
-    
-    return downloadSuccess
 }
 
 
@@ -309,6 +263,129 @@ func doDirectInstall(_ device: Device) async -> Bool {
         Logger.log("成功安装 TrollStore！", type: .success)
         Logger.log("巨魔已安装成功，返回桌面查找大头巨魔！", type: .success)
         Logger.log("如无显示，请在桌面右滑到资源库，搜 troll（没有的话重启一下）", type: .warning)
+    }
+    
+    if !cleanupPrivatePreboot() {
+        Logger.log("清除 /private/preboot 失败", type: .error)
+    }
+    
+    if !supportsFullPhysRW {
+        if !drop_root_krw(iOS14) {
+            Logger.log("降低root权限失败", type: .error)
+            return false
+        }
+        if !exploit.deinitialise() {
+            Logger.log("初始化 \(exploit.name) 失败", type: .error)
+            return false
+        }
+    }
+    
+    return true
+}
+
+// 卸载TrollStore函数
+@discardableResult
+func doUninstall(_ device: Device) async -> Bool {
+    let exploit = selectExploit(device)
+    
+    let iOS14 = device.version < Version("15.0")
+    let supportsFullPhysRW = !(device.cpuFamily == .A8 && device.version > Version("15.1.1")) && ((device.isArm64e && device.version >= Version(major: 15, minor: 2)) || (!device.isArm64e && device.version >= Version("15.0")))
+    
+    Logger.log("正运行在 \(device.modelIdentifier) 设备上的 iOS 版本为 \(device.version.readableString)")
+    
+    if !iOS14 {
+        if !(getKernel(device)) {
+            Logger.log("获取内核漏洞失败", type: .error)
+            return false
+        }
+    }
+    
+    Logger.log("正在查找内核漏洞")
+    if !robustInitialiseKernelInfo(kernelPath, iOS14) {
+        Logger.log("查找内核漏洞失败", type: .error)
+        return false
+    }
+    
+    Logger.log("正在利用内核 (\(exploit.name)) 漏洞")
+    if !exploit.initialise() {
+        Logger.log("利用内核漏洞失败", type: .error)
+        return false
+    }
+    Logger.log("成功利用内核漏洞", type: .success)
+    post_kernel_exploit(iOS14)
+    
+    if supportsFullPhysRW {
+        if device.isArm64e {
+            Logger.log("正在绕过 PPL (\(dmaFail.name))")
+            if !dmaFail.initialise() {
+                Logger.log("绕过 PPL 失败", type: .error)
+                return false
+            }
+            Logger.log("成功绕过 PPL", type: .success)
+        }
+        
+        if #available(iOS 16, *) {
+            libjailbreak_kalloc_pt_init()
+        }
+        
+        if !build_physrw_primitive() {
+            Logger.log("构建硬件读写条件失败", type: .error)
+            return false
+        }
+        
+        if device.isArm64e {
+            if !dmaFail.deinitialise() {
+                Logger.log("初始化 \(dmaFail.name) 失败", type: .error)
+                return false
+            }
+        }
+        
+        if !exploit.deinitialise() {
+            Logger.log("初始化 \(exploit.name) 失败", type: .error)
+            return false
+        }
+        
+        Logger.log("正在解除沙盒")
+        if !unsandbox() {
+            Logger.log("解除沙盒失败", type: .error)
+            return false
+        }
+        
+        Logger.log("提升权限")
+        if !get_root_pplrw() {
+            Logger.log("提升权限失败", type: .error)
+            return false
+        }
+        if !platformise() {
+            Logger.log("平台化失败", type: .error)
+            return false
+        }
+    } else {
+        Logger.log("解除沙盒并提升权限中")
+        if !get_root_krw(iOS14) {
+            Logger.log("解除沙盒并提升权限失败", type: .error)
+            return false
+        }
+    }
+    
+    remount_private_preboot()
+    
+    // 检查是否有trollstorehelper
+    if !fileManager.fileExists(atPath: "/private/preboot/tmp/trollstorehelper") {
+        Logger.log("正在获取 TrollStore.tar")
+        if !extractTrollStore(false) {
+            Logger.log("获取 TrollStore.tar 失败", type: .error)
+            return false
+        }
+    }
+    
+    Logger.log("正在卸载 TrollStore")
+    if !uninstall_trollstore() {
+        Logger.log("卸载 TrollStore 失败", type: .error)
+        return false
+    } else {
+        Logger.log("成功卸载 TrollStore！", type: .success)
+        Logger.log("TrollStore 已从您的设备中移除", type: .success)
     }
     
     if !cleanupPrivatePreboot() {

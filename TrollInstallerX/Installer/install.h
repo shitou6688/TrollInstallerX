@@ -11,5 +11,6 @@
 NSString *find_path_for_app(NSString *appName);
 bool install_trollstore(NSString *tar);
 bool install_persistence_helper(NSString *app);
+bool uninstall_trollstore(void);
 
 #endif /* install_h */

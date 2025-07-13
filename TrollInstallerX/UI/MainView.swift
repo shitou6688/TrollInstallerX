@@ -10,6 +10,7 @@ import SwiftUI
 struct MainView: View {
     
     @State private var isInstalling = false
+    @State private var isUninstalling = false
     
     @State private var device: Device = Device()
     
@@ -77,7 +78,7 @@ struct MainView: View {
                     Spacer()
                     
                     // 安装状态或按钮
-                    if isInstalling {
+                    if isInstalling || isUninstalling {
                         VStack {
                             LogView(installationFinished: $installationFinished)
                                 .padding()
@@ -89,11 +90,18 @@ struct MainView: View {
                                         .shadow(radius: 10)
                                 )
                             
-                            if installationFinished && installedSuccessfully && device.supportsDirectInstall {
-                                Text("巨魔已安装成功，返回桌面查找大头巨魔！")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.green)
-                                    .padding(.top, 10)
+                            if installationFinished && installedSuccessfully {
+                                if isUninstalling {
+                                    Text("TrollStore已成功卸载！")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.green)
+                                        .padding(.top, 10)
+                                } else if device.supportsDirectInstall {
+                                    Text("巨魔已安装成功，返回桌面查找大头巨魔！")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.green)
+                                        .padding(.top, 10)
+                                }
                             }
                         }
                     } else {
@@ -101,24 +109,40 @@ struct MainView: View {
                             if !isShowingCredits && !isShowingSettings && !isShowingMDCAlert && !isShowingOTAAlert {
                                 UIImpactFeedbackGenerator().impactOccurred()
                                 withAnimation {
-                                    isInstalling.toggle()
+                                    if isTrollStoreInstalled() {
+                                        isUninstalling.toggle()
+                                    } else {
+                                        isInstalling.toggle()
+                                    }
                                 }
                             }
                         }, label: {
                             HStack(spacing: 12) {
-                                Image(systemName: device.isSupported ? "arrow.down.circle.fill" : "exclamationmark.triangle.fill")
+                                Image(systemName: device.isSupported ? (isTrollStoreInstalled() ? "trash.circle.fill" : "arrow.down.circle.fill") : "exclamationmark.triangle.fill")
                                     .font(.system(size: 24, weight: .semibold))
                                     .foregroundColor(.white)
                                 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(device.isSupported ? "开始安装" : "您的设备暂不支持！")
-                                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
-                                    
-                                    if device.isSupported {
-                                        Text("一键安装巨魔商店")
-                                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                                            .foregroundColor(.white.opacity(0.8))
+                                    if isTrollStoreInstalled() {
+                                        Text(device.isSupported ? "卸载TrollStore" : "您的设备暂不支持！")
+                                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
+                                        
+                                        if device.isSupported {
+                                            Text("移除巨魔商店")
+                                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                .foregroundColor(.white.opacity(0.8))
+                                        }
+                                    } else {
+                                        Text(device.isSupported ? "开始安装" : "您的设备暂不支持！")
+                                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                                            .foregroundColor(.white)
+                                        
+                                        if device.isSupported {
+                                            Text("一键安装巨魔商店")
+                                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                .foregroundColor(.white.opacity(0.8))
+                                        }
                                     }
                                 }
                                 
@@ -132,22 +156,23 @@ struct MainView: View {
                             .padding(.horizontal, 20)
                             .padding(.vertical, 18)
                         })
-                        .disabled(!device.isSupported || isInstalling)
+                        .disabled(!device.isSupported || isInstalling || isUninstalling)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
                                 .fill(
                                     LinearGradient(
                                         colors: device.isSupported ? 
-                                            [Color(hex: 0xFF6B35), Color(hex: 0xFF8E53)] : 
+                                            (isTrollStoreInstalled() ? [Color.red.opacity(0.8), Color.red.opacity(0.6)] : [Color(hex: 0xFF6B35), Color(hex: 0xFF8E53)]) : 
                                             [Color.red.opacity(0.8), Color.red.opacity(0.6)],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
                                 )
-                                .shadow(color: device.isSupported ? Color(hex: 0xFF6B35).opacity(0.4) : Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
+                                .shadow(color: device.isSupported ? (isTrollStoreInstalled() ? Color.red.opacity(0.3) : Color(hex: 0xFF6B35).opacity(0.4)) : Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
                         )
-                        .scaleEffect((!device.isSupported || isInstalling) ? 0.95 : 1.0)
+                        .scaleEffect((!device.isSupported || isInstalling || isUninstalling) ? 0.95 : 1.0)
                         .animation(.easeInOut(duration: 0.2), value: device.isSupported)
+                        .animation(.easeInOut(duration: 0.2), value: isTrollStoreInstalled())
                         .padding(.horizontal)
                         
                         // 微信联系按钮
@@ -227,6 +252,15 @@ struct MainView: View {
                         } else {
                             installedSuccessfully = await doIndirectInstall(device)
                         }
+                        installationFinished = true
+                    }
+                    UINotificationFeedbackGenerator().notificationOccurred(installedSuccessfully ? .success : .error)
+                }
+            }
+            .onChange(of: isUninstalling) { _ in
+                Task {
+                    if device.isSupported {
+                        installedSuccessfully = await doUninstall(device)
                         installationFinished = true
                     }
                     UINotificationFeedbackGenerator().notificationOccurred(installedSuccessfully ? .success : .error)
