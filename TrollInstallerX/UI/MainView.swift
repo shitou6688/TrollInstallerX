@@ -255,7 +255,7 @@ struct MainView: View {
                 }
                 if isShowingQRCode {
                     PopupView(isShowingAlert: $isShowingQRCode, content: {
-                        WeChatQRCodeView(wechatID: "jumo668888", isShowing: $isShowingQRCode)
+                        WeChatQRCodeView(isShowing: $isShowingQRCode)
                     })
                 }
             }
@@ -322,46 +322,29 @@ struct MainView_Previews: PreviewProvider {
 
 // 微信二维码显示视图
 struct WeChatQRCodeView: View {
-    let wechatID: String
     @Binding var isShowing: Bool
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Text("扫描二维码添加微信")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
-            if let qrCodeImage = WeChatManager.shared.generateWeChatQRCode(wechatID: wechatID) {
-                Image(uiImage: qrCodeImage)
-                    .resizable()
-                    .frame(width: 200, height: 200)
-                    .cornerRadius(10)
-            } else {
-                Text("二维码生成失败")
-                    .foregroundColor(.red)
-            }
-            
-            Text("微信号：\(wechatID)")
-                .font(.headline)
-                .padding(.horizontal)
-            
+
+            // 显示本地二维码图片
+            Image("WeChatQRCode")
+                .resizable()
+                .frame(width: 200, height: 200)
+                .cornerRadius(10)
+
             Button("复制微信号") {
-                UIPasteboard.general.string = wechatID
+                UIPasteboard.general.string = "jumo668888"
                 WeChatManager.shared.showAlert(title: "已复制", message: "微信号已复制到剪贴板")
             }
             .padding()
             .background(Color.blue)
             .foregroundColor(.white)
             .cornerRadius(10)
-            
-            Button("尝试直接跳转微信") {
-                WeChatManager.shared.addWeChatFriend(wechatID: wechatID)
-            }
-            .padding()
-            .background(Color.green)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-            
+
             Button("关闭") {
                 isShowing = false
             }
