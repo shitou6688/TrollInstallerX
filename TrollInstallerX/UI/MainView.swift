@@ -46,25 +46,6 @@ struct MainView: View {
         }
     }
     
-    // 从帮助弹窗打开微信函数
-    func openWeChatFromHelp() {
-        let wechatID = "jumo668888"
-        
-        // 显示微信号供用户复制
-        let alert = UIAlertController(title: "微信联系", message: "微信号: \(wechatID)\n请复制微信号到微信中搜索添加", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "复制微信号", style: .default) { _ in
-            UIPasteboard.general.string = wechatID
-        })
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
-        
-        // 获取当前视图控制器来显示alert
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first,
-           let rootViewController = window.rootViewController {
-            rootViewController.present(alert, animated: true)
-        }
-    }
-    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -170,29 +151,52 @@ struct MainView: View {
                         .animation(.easeInOut(duration: 0.2), value: device.isSupported)
                         .padding(.horizontal)
                         
-                        // 帮助说明按钮
-                        Button(action: {
-                            isShowingHelp = true
-                        }) {
-                            HStack {
-                                Image(systemName: "questionmark.circle.fill")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 18))
-                                Text("帮助说明")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.white)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 14))
+                        // 联系客服和帮助说明按钮行
+                        HStack(spacing: 15) {
+                            // 微信联系按钮
+                            Button(action: {
+                                openWeChat()
+                            }) {
+                                HStack {
+                                    Image(systemName: "message.fill")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16))
+                                    Text("联系客服")
+                                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.green.opacity(0.8))
+                                    .shadow(radius: 3)
+                            )
+                            
+                            // 帮助说明按钮
+                            Button(action: {
+                                isShowingHelp = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "questionmark.circle.fill")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16))
+                                    Text("帮助说明")
+                                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                            }
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.purple.opacity(0.85)) // 由蓝色改为紫色
+                                    .shadow(radius: 3)
+                            )
                         }
-                        .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(Color.blue.opacity(0.8))
-                                .shadow(radius: 5)
-                        )
                         .padding(.horizontal)
                         .padding(.top, 10)
                     }
@@ -229,7 +233,7 @@ struct MainView: View {
                 }
                 if isShowingHelp {
                     PopupView(isShowingAlert: $isShowingHelp, content: {
-                        HelpView(onContactWeChat: openWeChatFromHelp)
+                        HelpView()
                     })
                 }
             }
@@ -289,8 +293,6 @@ struct MainView: View {
 }
 
 struct HelpView: View {
-    let onContactWeChat: () -> Void
-    
     var body: some View {
         VStack(spacing: 20) {
             Text("帮助说明")
@@ -298,28 +300,6 @@ struct HelpView: View {
                 .foregroundColor(.black)
             
             VStack(spacing: 15) {
-                // 联系客服按钮
-                Button(action: {
-                    onContactWeChat()
-                }) {
-                    HStack {
-                        Image(systemName: "message.fill")
-                            .foregroundColor(.white)
-                            .font(.system(size: 18))
-                        Text("联系客服微信: jumo668888")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                        Spacer()
-                        Image(systemName: "arrow.up.right.square")
-                            .foregroundColor(.white)
-                            .font(.system(size: 16))
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.green.opacity(0.8))
-                    )
-                }
                 // 安装巨魔流程
                 Button(action: {
                     if let url = URL(string: "https://www.yuque.com/yuqueyonghuroiej0/mucqna/dw7pbxhuc234vzl9?singleDoc#") {
