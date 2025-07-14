@@ -171,7 +171,7 @@ struct MainView: View {
                             }
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.green.opacity(0.8))
+                                    .fill(Color.green.opacity(0.85))
                                     .shadow(radius: 3)
                             )
                             
@@ -193,7 +193,7 @@ struct MainView: View {
                             }
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.orange.opacity(0.85)) // 由紫色改为橙色
+                                    .fill(Color.blue.opacity(0.85))
                                     .shadow(radius: 3)
                             )
                         }
