@@ -374,6 +374,31 @@ struct HelpView: View {
                             .fill(Color.gray.opacity(0.1))
                     )
                 }
+                
+                // 警告信息
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.red)
+                            .font(.system(size: 16))
+                        Text("警告")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.red)
+                    }
+                    Text("安装成功恶意仅退款者，还原抹机后果自负。")
+                        .font(.system(size: 12))
+                        .foregroundColor(.red.opacity(0.8))
+                        .multilineTextAlignment(.leading)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.red.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                        )
+                )
             }
             .padding(.horizontal)
             
