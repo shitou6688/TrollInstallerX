@@ -183,7 +183,7 @@ struct MainView: View {
                                     Image(systemName: "questionmark.circle.fill")
                                         .foregroundColor(.white)
                                         .font(.system(size: 16))
-                                    Text("帮助说明")
+                                    Text("帮助教程")
                                         .font(.system(size: 16, weight: .bold, design: .rounded))
                                         .foregroundColor(.white)
                                 }
@@ -295,7 +295,7 @@ struct MainView: View {
 struct HelpView: View {
     var body: some View {
         VStack(spacing: 20) {
-            Text("帮助说明")
+            Text("帮助教程")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(.black)
             
