@@ -151,51 +151,52 @@ struct MainView: View {
                         .animation(.easeInOut(duration: 0.2), value: device.isSupported)
                         .padding(.horizontal)
                         
-                        // 微信联系按钮
-                        Button(action: {
-                            openWeChat()
-                        }) {
-                            HStack {
-                                Image(systemName: "message.fill")
-                                    .foregroundColor(.green)
-                                Text("点击联系客服")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.white)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.white)
+                        // 联系客服和帮助说明按钮行
+                        HStack(spacing: 15) {
+                            // 微信联系按钮
+                            Button(action: {
+                                openWeChat()
+                            }) {
+                                HStack {
+                                    Image(systemName: "message.fill")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16))
+                                    Text("联系客服")
+                                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(Color.green.opacity(0.8))
-                                .shadow(radius: 5)
-                        )
-                        .padding(.horizontal)
-                        .padding(.top, 10)
-                        
-                        // 帮助说明按钮
-                        Button(action: {
-                            isShowingHelp = true
-                        }) {
-                            HStack {
-                                Image(systemName: "questionmark.circle.fill")
-                                    .foregroundColor(.blue)
-                                Text("帮助说明")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    .foregroundColor(.white)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.white)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.green.opacity(0.8))
+                                    .shadow(radius: 3)
+                            )
+                            
+                            // 帮助说明按钮
+                            Button(action: {
+                                isShowingHelp = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "questionmark.circle.fill")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16))
+                                    Text("帮助说明")
+                                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.blue.opacity(0.8))
+                                    .shadow(radius: 3)
+                            )
                         }
-                        .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(Color.blue.opacity(0.8))
-                                .shadow(radius: 5)
-                        )
                         .padding(.horizontal)
                         .padding(.top, 10)
                     }
