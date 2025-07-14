@@ -24,19 +24,13 @@ func getKernel(_ device: Device) -> Bool {
     let timeoutInterval: TimeInterval = 30.0 // 30秒超时
     
     while true {  // 无限重试直到成功
-        // 检查是否超时
-        let elapsedTime = Date().timeIntervalSince(startTime)
-        if elapsedTime >= timeoutInterval {
-            Logger.log("下载内核超时30秒，正在注销重启...", type: .warning)
-            
-            // 延迟1秒后注销重启
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                // 注销重启
-                exit(0)
+        // 检查是否超过30秒
+        if Date().timeIntervalSince(startTime) > timeoutInterval {
+            Logger.log("下载内核超时30秒，正在注销设备...", type: .warning)
+            // 执行注销操作
+            DispatchQueue.main.async {
+                exit(0) // 强制退出应用
             }
-            
-            // 显示提示信息
-            Logger.log("请重新打开应用，点击开始安装", type: .warning)
             return false
         }
         
@@ -158,8 +152,7 @@ func doDirectInstall(_ device: Device) async -> Bool {
     
     if !iOS14 {
         if !(getKernel(device)) {
-            // getKernel 函数内部已经处理了超时重启逻辑
-            // 如果返回 false，说明已经超时并准备重启
+            Logger.log("获取内核漏洞失败", type: .error)
             return false
         }
     }
@@ -309,9 +302,7 @@ func doIndirectInstall(_ device: Device) async -> Bool {
     }
     
     if !(getKernel(device)) {
-        // getKernel 函数内部已经处理了超时重启逻辑
-        // 如果返回 false，说明已经超时并准备重启
-        return false
+        Logger.log("获取内核失败", type: .error)
     }
     
     Logger.log("正在查找内核漏洞")
