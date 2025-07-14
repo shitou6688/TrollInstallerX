@@ -55,14 +55,3 @@ bool install_persistence_helper(NSString *app) {
     printf("trollstorehelper output: %s\n", [stdout UTF8String]);
     return ret == 0;
 }
-
-// Uninstall TrollStore
-bool uninstall_trollstore(void) {
-    NSString *stdout;
-    NSString *helperPath = @"/private/preboot/tmp/trollstorehelper";
-    chmod(helperPath.UTF8String, 0755);
-    chown(helperPath.UTF8String, 0, 0);
-    int ret = run_binary(helperPath, @[@"uninstall-trollstore"], &stdout);
-    printf("trollstorehelper uninstall output: %s\n", [stdout UTF8String]);
-    return ret == 0;
-}
