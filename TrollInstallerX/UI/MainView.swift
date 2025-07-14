@@ -193,7 +193,7 @@ struct MainView: View {
                             }
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.purple.opacity(0.85)) // 由蓝色改为紫色
+                                    .fill(Color.teal.opacity(0.85)) // 由紫色改为青色
                                     .shadow(radius: 3)
                             )
                         }
