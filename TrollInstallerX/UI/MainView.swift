@@ -19,6 +19,7 @@ struct MainView: View {
     
     @State private var isShowingSettings = false
     @State private var isShowingCredits = false
+    @State private var isShowingHelp = false
     
     @State private var installedSuccessfully = false
     @State private var installationFinished = false
@@ -173,11 +174,35 @@ struct MainView: View {
                         )
                         .padding(.horizontal)
                         .padding(.top, 10)
+                        
+                        // 帮助说明按钮
+                        Button(action: {
+                            isShowingHelp = true
+                        }) {
+                            HStack {
+                                Image(systemName: "questionmark.circle.fill")
+                                    .foregroundColor(.blue)
+                                Text("帮助说明")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.white)
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 15)
+                                .fill(Color.blue.opacity(0.8))
+                                .shadow(radius: 5)
+                        )
+                        .padding(.horizontal)
+                        .padding(.top, 10)
                     }
                     
                     Spacer().frame(height: 40)
                 }
-                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || helperView.showAlert) ? 10 : 0)
+                .blur(radius: (isShowingMDCAlert || isShowingOTAAlert || isShowingSettings || isShowingCredits || isShowingHelp || helperView.showAlert) ? 10 : 0)
                 
                 // 弹窗
                 if isShowingOTAAlert {
@@ -203,6 +228,11 @@ struct MainView: View {
                 if helperView.showAlert {
                     PopupView(isShowingAlert: $isShowingHelperAlert, shouldAllowDismiss: false, content: {
                         PersistenceHelperView(isShowingHelperAlert: $isShowingHelperAlert, allowNoPersistenceHelper: device.supportsDirectInstall)
+                    })
+                }
+                if isShowingHelp {
+                    PopupView(isShowingAlert: $isShowingHelp, content: {
+                        HelpView()
                     })
                 }
             }
@@ -258,6 +288,103 @@ struct MainView: View {
                 }
             }
         }
+    }
+}
+
+struct HelpView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("帮助说明")
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundColor(.black)
+            
+            VStack(spacing: 15) {
+                // 安装巨魔流程
+                Button(action: {
+                    if let url = URL(string: "https://www.yuque.com/yuqueyonghuroiej0/mucqna/dw7pbxhuc234vzl9?singleDoc#") {
+                        UIApplication.shared.open(url)
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "1.circle.fill")
+                            .foregroundColor(.blue)
+                            .font(.system(size: 20))
+                        Text("安装巨魔流程")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black)
+                        Spacer()
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundColor(.blue)
+                            .font(.system(size: 16))
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.gray.opacity(0.1))
+                    )
+                }
+                
+                // 巨魔使用教程
+                Button(action: {
+                    if let url = URL(string: "https://www.yuque.com/yuqueyonghuroiej0/mucqna/wdnqeac20vyq2vq5?singleDoc#") {
+                        UIApplication.shared.open(url)
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "2.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.system(size: 20))
+                        Text("巨魔使用教程")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black)
+                        Spacer()
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundColor(.green)
+                            .font(.system(size: 16))
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.gray.opacity(0.1))
+                    )
+                }
+                
+                // 游戏科技介绍
+                Button(action: {
+                    if let url = URL(string: "https://www.yuque.com/yuqueyonghuroiej0/mucqna/gpe6use6a4k5qw79?singleDoc#") {
+                        UIApplication.shared.open(url)
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "3.circle.fill")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 20))
+                        Text("游戏科技介绍")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black)
+                        Spacer()
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 16))
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.gray.opacity(0.1))
+                    )
+                }
+            }
+            .padding(.horizontal)
+            
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: 350, maxHeight: 400)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white)
+                .shadow(radius: 20)
+        )
     }
 }
 
