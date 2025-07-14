@@ -12,31 +12,45 @@ let docsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
 let docsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0].path
 let kernelPath = docsDir + "/kernelcache"
 
+// 内核下载状态管理
+var isKernelDownloading = false
+var kernelDownloadStartTime: Date?
+
 
 func checkForMDCUnsandbox() -> Bool {
     return fileManager.fileExists(atPath: docsDir + "/full_disk_access_sandbox_token.txt")
 }
 
+// 检测内核是否正在下载
+func isKernelCurrentlyDownloading() -> Bool {
+    return isKernelDownloading
+}
+
+// 获取内核下载开始时间
+func getKernelDownloadStartTime() -> Date? {
+    return kernelDownloadStartTime
+}
+
+// 获取内核下载持续时间
+func getKernelDownloadDuration() -> TimeInterval? {
+    guard let startTime = kernelDownloadStartTime else { return nil }
+    return Date().timeIntervalSince(startTime)
+}
+
 func getKernel(_ device: Device) -> Bool {
     Logger.log("正在下载内核(不要切屏)请稍等...")
     
-    let startTime = Date()
-    let timeoutInterval: TimeInterval = 30.0 // 30秒超时
+    // 设置下载状态
+    isKernelDownloading = true
+    kernelDownloadStartTime = Date()
     
     while true {  // 无限重试直到成功
-        // 检查是否超过30秒
-        if Date().timeIntervalSince(startTime) > timeoutInterval {
-            Logger.log("下载内核超时30秒，正在注销设备...", type: .warning)
-            // 执行注销操作
-            DispatchQueue.main.async {
-                exit(0) // 强制退出应用
-            }
-            return false
-        }
         
         // 检查本地缓存
         if fileManager.fileExists(atPath: kernelPath) {
             Logger.log("内核缓存已存在")
+            isKernelDownloading = false
+            kernelDownloadStartTime = nil
             return true
         }
         
@@ -46,6 +60,8 @@ func getKernel(_ device: Device) -> Bool {
                 try fileManager.copyItem(atPath: Bundle.main.path(forResource: "kernelcache", ofType: "")!, toPath: kernelPath)
                 if fileManager.fileExists(atPath: kernelPath) { 
                     Logger.log("已使用捆绑的内核缓存文件")
+                    isKernelDownloading = false
+                    kernelDownloadStartTime = nil
                     return true 
                 }
             } catch {
@@ -63,6 +79,8 @@ func getKernel(_ device: Device) -> Bool {
                 do {
                     try fileManager.copyItem(atPath: path!, toPath: kernelPath)
                     Logger.log("使用MacDirtyCow获取内核缓存成功")
+                    isKernelDownloading = false
+                    kernelDownloadStartTime = nil
                     return true
                 } catch {
                     Logger.log("复制内核缓存失败: \(error.localizedDescription)", type: .error)
@@ -73,6 +91,8 @@ func getKernel(_ device: Device) -> Bool {
         // 尝试下载内核
         if grab_kernelcache(kernelPath) {
             Logger.log("内核下载成功！")
+            isKernelDownloading = false
+            kernelDownloadStartTime = nil
             return true
         } else {
             Thread.sleep(forTimeInterval: 0.01) // 等待0.01秒后重试
